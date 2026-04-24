@@ -2,6 +2,7 @@
 #include <sstream>
 #include <string>
 #include "log.hpp"
+#include "Server.hpp"
 
 LOG_REGISTER(main);
 
@@ -47,5 +48,7 @@ int main(int argc, char *argv[]) {
         return 1;
 
     LOG_DBG("port: " << port << "; password: " << passw);
+    Server srv(port, passw);
+    srv.run();
     return 0;
 }

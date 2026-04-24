@@ -6,7 +6,7 @@
 #    By: djunho <djunho@student.42porto.com>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/12 20:28:21 by djunho            #+#    #+#              #
-#    Updated: 2026/04/24 11:02:26 by djunho           ###   ########.fr        #
+#    Updated: 2026/04/24 11:28:12 by djunho           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,6 +16,7 @@ SRCS_DIR = .
 
 SRCS = $(SRCS_DIR)/main.cpp \
 	$(SRCS_DIR)/log.cpp \
+	$(SRCS_DIR)/Server.cpp \
 
 
 OBJS_DIR = objs

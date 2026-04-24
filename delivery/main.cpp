@@ -1,6 +1,9 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include "log.hpp"
+
+LOG_REGISTER(main);
 
 static void usage(char *argv[]) {
     std::cout << "Usage: " << argv[0] << " <port> <password>\n";
@@ -36,13 +39,13 @@ static bool parseArg(int argc, char *argv[], unsigned int &port, std::string &pa
 }
 
 int main(int argc, char *argv[]) {
-    std::cout << "ft_irc server started\n";
+    LOG_INF("IRC server started");
 
     unsigned int port;
     std::string passw;
     if (!parseArg(argc, argv, port, passw))
         return 1;
 
-    std::cout << "DEBUG: port: " << port << "; password: " << passw << "\n";
+    LOG_DBG("port: " << port << "; password: " << passw);
     return 0;
 }

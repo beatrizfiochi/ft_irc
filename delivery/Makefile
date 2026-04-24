@@ -6,7 +6,7 @@
 #    By: djunho <djunho@student.42porto.com>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/12 20:28:21 by djunho            #+#    #+#              #
-#    Updated: 2026/04/24 08:56:34 by djunho           ###   ########.fr        #
+#    Updated: 2026/04/24 11:02:26 by djunho           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,13 +15,14 @@ NAME = ircserv
 SRCS_DIR = .
 
 SRCS = $(SRCS_DIR)/main.cpp \
+	$(SRCS_DIR)/log.cpp \
+
 
 OBJS_DIR = objs
 OBJS = $(patsubst %.cpp,$(OBJS_DIR)/%.o,$(SRCS))
 DEPENDS = $(patsubst %.cpp,$(OBJS_DIR)/%.d,$(SRCS))
 
-CXFLAGS += -Wall -Werror -Wextra -std=c++98 -ggdb
-
+CXFLAGS += -Wall -Werror -Wextra -std=c++98
 
 # Check https://stackoverflow.com/questions/2214575/passing-arguments-to-make-run
 # If the first argument is test, gdb, or valgrind
@@ -34,7 +35,7 @@ endif
 
 all: $(NAME)
 
-debug: CXFLAGS += -DTEST
+debug: CXFLAGS += -DENABLE_LOG=1 -DENABLE_LOG_LVL=4 -ggdb
 debug: all
 
 $(NAME): $(OBJS)

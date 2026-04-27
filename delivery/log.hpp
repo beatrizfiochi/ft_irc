@@ -67,6 +67,11 @@
     #else
         #define LOG_DBG(msg)
     #endif
+
+    #define LOG_IS_ERR_ENABLED  (ENABLE_LOG_LVL >= 1)
+    #define LOG_IS_WRN_ENABLED  (ENABLE_LOG_LVL >= 2)
+    #define LOG_IS_INF_ENABLED  (ENABLE_LOG_LVL >= 3)
+    #define LOG_IS_DBG_ENABLED  (ENABLE_LOG_LVL >= 4)
 #else // ENABLE_LOG
     #define LOG_REGISTER(module)
 
@@ -74,6 +79,11 @@
     #define LOG_WRN(msg)
     #define LOG_INF(msg)
     #define LOG_DBG(msg)
+
+    #define IF_LOG_ERR (0)
+    #define IF_LOG_WRN (0)
+    #define IF_LOG_INF (0)
+    #define IF_LOG_DBG (0)
 #endif // ENABLE_LOG
 
 #endif // _LOG_HPP_

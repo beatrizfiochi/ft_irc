@@ -1,3 +1,4 @@
+#include <cerrno>
 #include <netinet/in.h>
 #include <sys/types.h>  // Recomended on socket manual (see manual NOTES)
 #include <sys/socket.h>
@@ -11,12 +12,19 @@
 #include "Server.hpp"
 #include "log.hpp"
 
+// Maximum number of events
+#define MAX_EVENTS 10
+
+// Buffer size for eache reach in the socket
+#define SERVER_RECEPTION_CHUNCK_SIZE 1024
+
 LOG_REGISTER(server);
 
-Server::Server(void) : port(666), passw("42"), srv_socket(-1) {}
+Server::Server(void) : port(666), passw("42"), srv_socket(-1), epollfd(-1) {}
 
-Server::Server(unsigned int port, std::string passw) : port(port), passw(passw), srv_socket(-1) {
-}
+Server::Server(unsigned int port, std::string passw) :
+                        port(port), passw(passw),
+                        srv_socket(-1), epollfd(-1) {}
 
 Server::~Server(void) {
     if (this->srv_socket >= 0)
@@ -60,60 +68,99 @@ int Server::openServerSocket(void) {
     return 0;
 }
 
+// This code is based on the epoll manual usage example
 int Server::listenEvents(void) {
-    #define MAX_EVENTS 10
     struct epoll_event ev, events[MAX_EVENTS];
-    int conn_sock, nfds, epollfd;
+    int nfds;
 
-    epollfd = epoll_create1(0);
-    if (epollfd == -1) {
+    this->epollfd = epoll_create1(0);
+    if (this->epollfd == -1) {
         LOG_ERR("Error on epoll_create1");
         return EXIT_FAILURE;
     }
     ev.events = EPOLLIN;
     ev.data.fd = this->srv_socket;
-    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, this->srv_socket, &ev) == -1) {
+    if (epoll_ctl(this->epollfd, EPOLL_CTL_ADD, this->srv_socket, &ev) == -1) {
         LOG_ERR("epoll_ctl: this->srv_socket");
         return EXIT_FAILURE;
     }
 
     for (;;) {
-        nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
+        nfds = epoll_wait(this->epollfd, events, MAX_EVENTS, -1);
         if (nfds == -1) {
             LOG_ERR("epoll_wait");
             exit(EXIT_FAILURE);
         }
         for (int n = 0; n < nfds; ++n) {
             if (events[n].data.fd == this->srv_socket) {
-                sockaddr_in addr;
-                socklen_t addrlen;
-                conn_sock = accept(this->srv_socket,
-                                   (struct sockaddr *) &addr, &addrlen);
-                if (conn_sock == -1) {
-                    LOG_ERR("Error on accept");
-                    return EXIT_FAILURE;
-                }
-
-                //@@@@ DEBUG
-                char str[INET_ADDRSTRLEN];
-                // now get it back and print it
-                inet_ntop(AF_INET, &(addr.sin_addr), str, INET_ADDRSTRLEN);
-                std::stringstream ss;
-                ss << "addr = " << str << ":" << ntohs(addr.sin_port);
-                std::string msg = ss.str();
-                LOG_INF(msg);
-                // end @@@@@
-
-                //setnonblocking(conn_sock);
-                ev.events = EPOLLIN | EPOLLET;
-                ev.data.fd = conn_sock;
-                if (epoll_ctl(epollfd, EPOLL_CTL_ADD, conn_sock,
-                              &ev) == -1) {
-                    LOG_ERR("epoll_ctl: conn_sock");
-                    return EXIT_FAILURE;
-                }
+                this->addNewClient();
             } else {
-                // do_use_fd(events[n].data.fd);
+                this->receiveData(events[n].data.fd);
+            }
+        }
+    }
+    return 0;
+}
+
+int Server::addNewClient(void) {
+    int conn_sock;
+    sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+    conn_sock = accept4(this->srv_socket,
+                        (struct sockaddr *) &addr, &addrlen,
+                        SOCK_NONBLOCK | SOCK_CLOEXEC);
+    if (conn_sock == -1) {
+        LOG_ERR("Error on accept");
+        return EXIT_FAILURE;
+    }
+
+    if (LOG_IS_INF_ENABLED) {
+        // Print the ip and port of the connection
+        char str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &(addr.sin_addr), str, INET_ADDRSTRLEN);
+        std::stringstream ss;
+        ss << "Client: " << conn_sock << ", addr = " << str << ":" << ntohs(addr.sin_port);
+        std::string msg = ss.str();
+        LOG_INF(msg);
+    }
+
+    struct epoll_event ev;
+    ev.events = EPOLLIN | EPOLLET;
+    ev.data.fd = conn_sock;
+    if (epoll_ctl(this->epollfd, EPOLL_CTL_ADD, conn_sock,
+                  &ev) == -1) {
+        LOG_ERR("epoll_ctl: conn_sock");
+        return EXIT_FAILURE;
+    }
+    return 0;
+}
+
+int Server::receiveData(int fd) {
+    char buff[SERVER_RECEPTION_CHUNCK_SIZE];
+    ssize_t bytes;
+
+    while (true) {
+        // MSG_DONTWAIT not needed if socket is O_NONBLOCK
+        bytes = recv(fd, buff, sizeof(buff) - 1, 0);
+
+        if (bytes > 0) {
+            // Data received successfully
+            buff[bytes] = '\0';
+            LOG_DBG("Received msg (" << fd << ", size: " << bytes << "): " << buff);
+        } else if (bytes == 0) {
+            LOG_WRN("Client <" << fd << "> Disconnected");
+            // epoll_ctl DEL is automatic on close. Check NOTES on epoll manual
+            close(fd);
+            break;
+        } else {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                // Done reading all available data for this event trigger
+                break;
+            } else {
+                // A real error occurred (e.g., ECONNRESET)
+                LOG_ERR("recv error on fd " << fd);
+                close(fd);
+                return EXIT_FAILURE;
             }
         }
     }

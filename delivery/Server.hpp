@@ -13,8 +13,11 @@ private:
     unsigned int port;
     std::string passw;
     int srv_socket;
+    int epollfd;
 
     int openServerSocket(void);
     int listenEvents(void);
+    int addNewClient(void);
+    int receiveData(int fd);
 };
 #endif // _SERVER_HPP_

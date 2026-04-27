@@ -46,6 +46,11 @@ nc -C 127.0.0.1 6667
 - [ ] Communication between client and server has to be done via TCP/IP (v4 or v6)
 - Features to implement:
     - [ ] You must be able to authenticate, set a nickname, a username, join a channel, send and receive private messages using your reference client.
+        - [ ] NICK
+        - [ ] USER
+        - [ ] JOIN
+        - [ ] PRIVMSG
+        - [ ] check others...
     - [ ] All the messages sent from one client to a channel have to be forwarded to every other client that joined the channel.
     - [ ] You must have operators and regular users.
     - Then, you have to implement the commands that are specific to channel operators:

@@ -10,6 +10,7 @@
 #include <cstdlib>
 
 #include "Server.hpp"
+#include "Command/Command.hpp"
 #include "log.hpp"
 
 // Maximum number of events
@@ -180,6 +181,11 @@ int Server::receiveData(int fd) {
     }
     if (total == 0)
         return 0;
+
+    // Create the command only for debug
+    Command *a = Command::parsing(buff);
+    if (a != NULL)
+        delete a;
     return 0;
 }
 

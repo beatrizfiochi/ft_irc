@@ -6,7 +6,7 @@
 #    By: djunho <djunho@student.42porto.com>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/12 20:28:21 by djunho            #+#    #+#              #
-#    Updated: 2026/04/24 11:28:12 by djunho           ###   ########.fr        #
+#    Updated: 2026/04/28 13:25:54 by djunho           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,7 +17,7 @@ SRCS_DIR = .
 SRCS = $(SRCS_DIR)/main.cpp \
 	$(SRCS_DIR)/log.cpp \
 	$(SRCS_DIR)/Server.cpp \
-
+	$(SRCS_DIR)/Command/Command.cpp \
 
 OBJS_DIR = objs
 OBJS = $(patsubst %.cpp,$(OBJS_DIR)/%.o,$(SRCS))
@@ -44,17 +44,9 @@ $(NAME): $(OBJS)
 
 -include $(DEPENDS)
 
-# Rule for creating object files in $(OBJS_DIR)
-$(OBJS_DIR)/%.o:%.cpp Makefile | $(OBJS_DIR) $(dir $@)
+$(OBJS_DIR)/%.o: %.cpp Makefile
+	@mkdir -p $(@D)
 	$(CXX) $(CXFLAGS) -MMD -MP -c $< -o $@
-
-# Create the object directory if it doesn't exist
-# Create the directory for the object file if it doesn't exist
-$(OBJS_DIR):
-	@mkdir -p $(OBJS_DIR)
-
-$(OBJS_DIR)/%:
-	@mkdir -p $(dir $@)
 
 clean:
 	rm -rf $(OBJS) $(DEPENDS) $(OBJS_DIR)

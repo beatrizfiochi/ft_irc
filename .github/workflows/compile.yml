@@ -1,0 +1,26 @@
+name: Compile
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: Compile project (standard)
+        run: make -C delivery fclean all
+
+      - name: Compile project (debug)
+        run: make -C delivery fclean debug

@@ -15,7 +15,7 @@
 // Maximum number of events
 #define MAX_EVENTS 10
 
-// Buffer size for eache reach in the socket
+// Buffer size for each socket read. RFC messages are limited to 512 bytes,
 #define SERVER_RECEPTION_CHUNCK_SIZE 1024
 
 LOG_REGISTER(server);
@@ -137,21 +137,35 @@ int Server::addNewClient(void) {
 
 int Server::receiveData(int fd) {
     char buff[SERVER_RECEPTION_CHUNCK_SIZE];
+    ssize_t total = 0;
     ssize_t bytes;
 
+    //TODO: It assumes that we will read all the bytes into this buffer, and it will contain
+    // only one Command! Check if it is enough
+    // From the RFC:
+    // > IRC messages are always lines of characters terminated with a CR-LF
+    // > (Carriage Return - Line Feed) pair, and these messages shall not
+    // > exceed 512 characters in length, counting all characters including
+    // > the trailing CR-LF. Thus, there are 510 characters maximum allowed
+    // > for the command and its parameters.  There is no provision for
+    // > continuation message lines.  See section 7 for more details about
+    // > current implementations.
+    //
+    // TODO: Add bufferfull check for logging and drop connection
     while (true) {
         // MSG_DONTWAIT not needed if socket is O_NONBLOCK
-        bytes = recv(fd, buff, sizeof(buff) - 1, 0);
+        bytes = recv(fd, &buff[total], sizeof(buff) - 1 - total, 0);
 
         if (bytes > 0) {
             // Data received successfully
-            buff[bytes] = '\0';
-            LOG_DBG("Received msg (" << fd << ", size: " << bytes << "): " << buff);
+            buff[total + bytes] = '\0';
+            LOG_DBG("Received msg (" << fd << ", size: " << bytes << "): " << &buff[total]);
+            total += bytes;
         } else if (bytes == 0) {
             LOG_WRN("Client <" << fd << "> Disconnected");
             // epoll_ctl DEL is automatic on close. Check NOTES on epoll manual
             close(fd);
-            break;
+            return 0;
         } else {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 // Done reading all available data for this event trigger
@@ -164,6 +178,8 @@ int Server::receiveData(int fd) {
             }
         }
     }
+    if (total == 0)
+        return 0;
     return 0;
 }
 

@@ -1,4 +1,8 @@
 #include <cerrno>
+#include <cstring>
+#include <cstdlib>
+#include <sstream>
+#include <string>
 #include <netinet/in.h>
 #include <sys/types.h>  // Recomended on socket manual (see manual NOTES)
 #include <sys/socket.h>
@@ -6,8 +10,6 @@
 #include <unistd.h>
 #include <sys/epoll.h>
 #include <arpa/inet.h> // inet_ntop()
-#include <sstream>
-#include <cstdlib>
 
 #include "Server.hpp"
 #include "Command/Command.hpp"
@@ -18,6 +20,11 @@
 
 // Buffer size for each socket read. RFC messages are limited to 512 bytes,
 #define SERVER_RECEPTION_CHUNCK_SIZE 1024
+
+// From the RFC: 
+// > these messages shall not exceed 512 characters in length, counting all
+// > characters including the trailing CR-LF
+#define IRC_MAX_MESSAGE_SIZE         512
 
 LOG_REGISTER(server);
 
@@ -131,41 +138,55 @@ int Server::addNewClient(void) {
     if (epoll_ctl(this->epollfd, EPOLL_CTL_ADD, conn_sock,
                   &ev) == -1) {
         LOG_ERR("epoll_ctl: conn_sock");
+        close(conn_sock);
         return EXIT_FAILURE;
     }
+    this->clientBuffers[conn_sock] = "";
     return 0;
 }
 
-int Server::receiveData(int fd) {
-    char buff[SERVER_RECEPTION_CHUNCK_SIZE];
-    ssize_t total = 0;
-    ssize_t bytes;
+void Server::disconnectClient(int fd) {
+    this->clientBuffers.erase(fd);
+    // epoll_ctl DEL is automatic on close. Check NOTES on epoll manual
+    close(fd);
+}
 
-    //TODO: It assumes that we will read all the bytes into this buffer, and it will contain
-    // only one Command! Check if it is enough
-    // From the RFC:
-    // > IRC messages are always lines of characters terminated with a CR-LF
-    // > (Carriage Return - Line Feed) pair, and these messages shall not
-    // > exceed 512 characters in length, counting all characters including
-    // > the trailing CR-LF. Thus, there are 510 characters maximum allowed
-    // > for the command and its parameters.  There is no provision for
-    // > continuation message lines.  See section 7 for more details about
-    // > current implementations.
-    //
-    // TODO: Add bufferfull check for logging and drop connection
+void Server::processBufferedMessages(int fd) {
+    std::string &buffer = this->clientBuffers[fd];
+
+    while (true) {
+        std::string::size_type end = buffer.find("\r\n");
+        if (end == std::string::npos)
+            break;
+
+        std::string message = buffer.substr(0, end + 2);
+        buffer.erase(0, end + 2);
+
+        if (message.length() > IRC_MAX_MESSAGE_SIZE - 2) {
+            LOG_ERR("Message too long on fd " << fd << ", dropping it");
+            continue;
+        }
+
+        Command *cmd = Command::parsing(message);
+        if (cmd != NULL)
+            delete cmd;
+    }
+}
+
+int Server::receiveData(int fd) {
+    ssize_t bytes;
+    char buff[SERVER_RECEPTION_CHUNCK_SIZE];
+
     while (true) {
         // MSG_DONTWAIT not needed if socket is O_NONBLOCK
-        bytes = recv(fd, &buff[total], sizeof(buff) - 1 - total, 0);
+        bytes = recv(fd, buff, sizeof(buff), 0);
 
         if (bytes > 0) {
-            // Data received successfully
-            buff[total + bytes] = '\0';
-            LOG_DBG("Received msg (" << fd << ", size: " << bytes << "): " << &buff[total]);
-            total += bytes;
+            this->clientBuffers[fd].append(buff, bytes);
+            LOG_DBG("Received chunk (" << fd << ", size: " << bytes << ")");
         } else if (bytes == 0) {
             LOG_WRN("Client <" << fd << "> Disconnected");
-            // epoll_ctl DEL is automatic on close. Check NOTES on epoll manual
-            close(fd);
+            this->disconnectClient(fd);
             return 0;
         } else {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -174,18 +195,15 @@ int Server::receiveData(int fd) {
             } else {
                 // A real error occurred (e.g., ECONNRESET)
                 LOG_ERR("recv error on fd " << fd);
-                close(fd);
+                this->disconnectClient(fd);
                 return EXIT_FAILURE;
             }
         }
     }
-    if (total == 0)
+    if (this->clientBuffers.find(fd) == this->clientBuffers.end())
         return 0;
 
-    // Create the command only for debug
-    Command *a = Command::parsing(buff);
-    if (a != NULL)
-        delete a;
+    this->processBufferedMessages(fd);
     return 0;
 }
 

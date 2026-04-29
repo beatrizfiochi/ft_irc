@@ -170,3 +170,11 @@ bool Command::isValidParam(const std::string &param) {
     }
     return true;
 }
+
+const std::string& Command::getCmd(void) const {
+    return this->command;
+}
+
+const std::vector<std::string>& Command::getParams(void) const {
+    return this->param;
+}

@@ -1,15 +1,15 @@
 #include <cerrno>
 #include <cstring>
 #include <cstdlib>
+#include <unistd.h>
 #include <sstream>
 #include <string>
+#include <netinet/ip.h>
 #include <netinet/in.h>
 #include <sys/types.h>  // Recomended on socket manual (see manual NOTES)
 #include <sys/socket.h>
-#include <netinet/ip.h>
-#include <unistd.h>
 #include <sys/epoll.h>
-#include <arpa/inet.h> // inet_ntop()
+#include <arpa/inet.h>  // inet_ntop()
 
 #include "Server.hpp"
 #include "Command/Command.hpp"
@@ -25,6 +25,16 @@
 // > these messages shall not exceed 512 characters in length, counting all
 // > characters including the trailing CR-LF
 #define IRC_MAX_MESSAGE_SIZE         512
+
+// From the RFC:
+// > <prefix> ::= <servername> | <nick> | <extended prefix>
+// > <servername> ::= <host>
+// > <host>       ::= see RFC 952 [DNS:4] for details on allowed hostnames
+// From RFC 952
+// > <official hostname> ::= <hname>
+// > <hname> ::= <name>*["."<name>]
+// > <name>  ::= <let>[*[<let-or-digit-or-hyphen>]<let-or-digit>]
+#define SERVER_PREFIX               ":cbd.42porto.com"
 
 LOG_REGISTER(server);
 
@@ -168,9 +178,34 @@ void Server::processBufferedMessages(int fd) {
         }
 
         Command *cmd = Command::parsing(message);
-        if (cmd != NULL)
+        if (cmd != NULL) {
+            //TODO: Every command is sending 421 as no command is implemented yet. This will be done in the next PRs
+            std::vector<std::string> param(1, cmd->getCmd());
             delete cmd;
+            if (this->sendReply(fd, 421, param, "Unknown command") < 0)
+                return;
+        }
     }
+}
+
+int Server::sendReply(int fd, int err, const std::vector<std::string> &params, const std::string &trailing) {
+    std::stringstream ss;
+    //TODO: Replace the ClientNickname with real nickname
+    ss << SERVER_PREFIX << " " << err << " ClientNickname";
+    for (size_t i = 0; i < params.size(); ++i) {
+        if (!params[i].empty())
+            ss << " " << params[i];
+    }
+    if (!trailing.empty())
+        ss << " :" << trailing;
+    ss << "\r\n";
+    int ret = send(fd, ss.str().c_str(), ss.str().length(), MSG_NOSIGNAL);
+    if (ret < 0) {
+        LOG_ERR("send error (" << ret << "). errno == " << errno);
+        if (errno == EPIPE)
+            this->disconnectClient(fd);
+    }
+    return ret;
 }
 
 int Server::receiveData(int fd) {
@@ -194,7 +229,7 @@ int Server::receiveData(int fd) {
                 break;
             } else {
                 // A real error occurred (e.g., ECONNRESET)
-                LOG_ERR("recv error on fd " << fd);
+                LOG_ERR("recv error on fd " << fd << ". errno = " << errno);
                 this->disconnectClient(fd);
                 return EXIT_FAILURE;
             }

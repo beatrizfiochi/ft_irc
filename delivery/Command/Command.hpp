@@ -7,6 +7,8 @@
 class Command {
 public:
     static Command *parsing(const std::string &raw);
+    const std::string& getCmd(void) const;
+    const std::vector<std::string>& getParams(void) const;
 private:
     std::string command;
     std::vector<std::string> param;

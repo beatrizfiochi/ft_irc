@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include "Command/Command.hpp"
 
 class Server {
 public:
@@ -22,6 +23,9 @@ private:
     int listenEvents(void);
     int addNewClient(void);
     int receiveData(int fd);
+    int sendReply(int fd, int err,
+                  const std::vector<std::string> &params,
+                  const std::string &trailing);
     void disconnectClient(int fd);
     void processBufferedMessages(int fd);
 };

@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: djunho <djunho@student.42porto.com>        +#+  +:+       +#+         #
+#    By: cmoura-p <cmoura-p@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/12 20:28:21 by djunho            #+#    #+#              #
-#    Updated: 2026/04/28 13:25:54 by djunho           ###   ########.fr        #
+#    Updated: 2026/04/29 14:28:29 by cmoura-p         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -18,6 +18,7 @@ SRCS = $(SRCS_DIR)/main.cpp \
 	$(SRCS_DIR)/log.cpp \
 	$(SRCS_DIR)/Server.cpp \
 	$(SRCS_DIR)/Command/Command.cpp \
+	$(SRCS_DIR)/client/Client.cpp \
 
 OBJS_DIR = objs
 OBJS = $(patsubst %.cpp,$(OBJS_DIR)/%.o,$(SRCS))

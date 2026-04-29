@@ -113,7 +113,14 @@ int Server::listenEvents(void) {
             if (events[n].data.fd == this->srv_socket) {
                 this->addNewClient();
             } else {
-                this->receiveData(events[n].data.fd);
+                if (events[n].events & EPOLLIN)
+                    this->receiveData(events[n].data.fd);
+                // Skip fds that were disconnected while handling this epoll batch.
+                // Any later EPOLLOUT for them is stale.
+                if (this->clientBuffers.find(events[n].data.fd) == this->clientBuffers.end())
+                    continue;
+                if (events[n].events & EPOLLOUT)
+                    this->flushReplyBuffer(events[n].data.fd);
             }
         }
     }
@@ -152,13 +159,54 @@ int Server::addNewClient(void) {
         return EXIT_FAILURE;
     }
     this->clientBuffers[conn_sock] = "";
+    this->clientOutBuffers[conn_sock] = "";
     return 0;
 }
 
 void Server::disconnectClient(int fd) {
     this->clientBuffers.erase(fd);
+    this->clientOutBuffers.erase(fd);
     // epoll_ctl DEL is automatic on close. Check NOTES on epoll manual
     close(fd);
+}
+
+int Server::setWriteInterest(int fd, bool enabled) {
+    struct epoll_event ev;
+
+    ev.events = EPOLLIN | EPOLLET;
+    if (enabled) {
+        // Enable EPOLLOUT only while we have pending data.
+        // Leaving it armed permanently would wake us up even when the socket is already writable.
+        ev.events |= EPOLLOUT;
+    }
+    ev.data.fd = fd;
+    return epoll_ctl(this->epollfd, EPOLL_CTL_MOD, fd, &ev);
+}
+
+int Server::flushReplyBuffer(int fd) {
+    std::string &buffer = this->clientOutBuffers[fd];
+
+    while (!buffer.empty()) {
+        ssize_t sent = send(fd, buffer.c_str(), buffer.size(), MSG_NOSIGNAL);
+        if (sent > 0) {
+            buffer.erase(0, static_cast<size_t>(sent));
+        } else if (sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            break;
+        } else {
+            LOG_ERR("send error on fd " << fd << ". errno = " << errno);
+            this->disconnectClient(fd);
+            return -1;
+        }
+    }
+
+    // Disable EPOLLOUT once the output buffer is empty to avoid unnecessary wakeups.
+    if (buffer.empty() && this->setWriteInterest(fd, false) == -1) {
+        LOG_ERR("epoll_ctl MOD failed on fd " << fd << ". errno = " << errno);
+        this->disconnectClient(fd);
+        return -1;
+    }
+
+    return 0;
 }
 
 void Server::processBufferedMessages(int fd) {
@@ -199,13 +247,23 @@ int Server::sendReply(int fd, int err, const std::vector<std::string> &params, c
     if (!trailing.empty())
         ss << " :" << trailing;
     ss << "\r\n";
-    int ret = send(fd, ss.str().c_str(), ss.str().length(), MSG_NOSIGNAL);
-    if (ret < 0) {
-        LOG_ERR("send error (" << ret << "). errno == " << errno);
-        if (errno == EPIPE)
-            this->disconnectClient(fd);
+
+    std::string reply = ss.str();
+    std::string &out = this->clientOutBuffers[fd];
+    bool wasEmpty = out.empty();
+
+    out.append(reply);
+    if (this->flushReplyBuffer(fd) < 0)
+        return -1;
+
+    // If the buffer was empty before this reply and flushing left bytes queued,
+    // re-arm EPOLLOUT so the kernel wakes us when the socket can write again.
+    if (wasEmpty && !out.empty() && this->setWriteInterest(fd, true) == -1) {
+        LOG_ERR("epoll_ctl MOD failed on fd " << fd << ". errno = " << errno);
+        this->disconnectClient(fd);
+        return -1;
     }
-    return ret;
+    return 0;
 }
 
 int Server::receiveData(int fd) {

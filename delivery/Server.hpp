@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "client/Client.hpp"
 
 class Server {
 public:
@@ -16,9 +17,8 @@ private:
     std::string passw;
     int srv_socket;
     int epollfd;
-    //TODO: After implementing Clients, move it to there
-    std::map<int, std::string> clientBuffers;
-    std::map<int, std::string> clientOutBuffers;
+    // Client map <fd, Client>
+    std::map<int, Client>      client;
 
     int openServerSocket(void);
     int listenEvents(void);

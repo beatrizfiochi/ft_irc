@@ -15,7 +15,6 @@
 
 #include <string>
 #include <vector>
-#include "../Server.hpp"
 
 // CLIENT ERRORS
 #define ERR_NEEDMOREPARAMS 461
@@ -27,21 +26,28 @@
 
 class Client {
     private:
-
         int fd;
 
         std::string nickName;
         std::string userName;
         std::string realName;
 
+        // Internal buffers for send and receive
+        std::string read_buf;
+        std::string write_buf;
+
         bool passOk;
         bool registered;
 
     public:
         Client();
+        Client(int fd);
         Client(Client const &other);
         Client& operator=(Client const &rhs);
         ~Client();
+
+        std::string& getReadBuf(void);
+        std::string& getWriteBuf(void);
 
     /*  void getUserN();
         void getNickN();

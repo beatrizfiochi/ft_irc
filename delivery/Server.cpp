@@ -21,7 +21,7 @@
 // Buffer size for each socket read. RFC messages are limited to 512 bytes,
 #define SERVER_RECEPTION_CHUNCK_SIZE 1024
 
-// From the RFC: 
+// From the RFC:
 // > these messages shall not exceed 512 characters in length, counting all
 // > characters including the trailing CR-LF
 #define IRC_MAX_MESSAGE_SIZE         512
@@ -117,7 +117,7 @@ int Server::listenEvents(void) {
                     this->receiveData(events[n].data.fd);
                 // Skip fds that were disconnected while handling this epoll batch.
                 // Any later EPOLLOUT for them is stale.
-                if (this->clientBuffers.find(events[n].data.fd) == this->clientBuffers.end())
+                if (this->client.find(events[n].data.fd) == this->client.end())
                     continue;
                 if (events[n].events & EPOLLOUT)
                     this->flushReplyBuffer(events[n].data.fd);
@@ -158,14 +158,12 @@ int Server::addNewClient(void) {
         close(conn_sock);
         return EXIT_FAILURE;
     }
-    this->clientBuffers[conn_sock] = "";
-    this->clientOutBuffers[conn_sock] = "";
+    this->client[conn_sock] = Client(conn_sock);
     return 0;
 }
 
 void Server::disconnectClient(int fd) {
-    this->clientBuffers.erase(fd);
-    this->clientOutBuffers.erase(fd);
+    this->client.erase(fd);
     // epoll_ctl DEL is automatic on close. Check NOTES on epoll manual
     close(fd);
 }
@@ -184,7 +182,7 @@ int Server::setWriteInterest(int fd, bool enabled) {
 }
 
 int Server::flushReplyBuffer(int fd) {
-    std::string &buffer = this->clientOutBuffers[fd];
+    std::string &buffer = this->client[fd].getWriteBuf();
 
     while (!buffer.empty()) {
         ssize_t sent = send(fd, buffer.c_str(), buffer.size(), MSG_NOSIGNAL);
@@ -210,7 +208,7 @@ int Server::flushReplyBuffer(int fd) {
 }
 
 void Server::processBufferedMessages(int fd) {
-    std::string &buffer = this->clientBuffers[fd];
+    std::string &buffer = this->client[fd].getReadBuf();
 
     while (true) {
         std::string::size_type end = buffer.find("\r\n");
@@ -249,7 +247,7 @@ int Server::sendReply(int fd, int err, const std::vector<std::string> &params, c
     ss << "\r\n";
 
     std::string reply = ss.str();
-    std::string &out = this->clientOutBuffers[fd];
+    std::string &out = this->client[fd].getWriteBuf();
     bool wasEmpty = out.empty();
 
     out.append(reply);
@@ -275,7 +273,7 @@ int Server::receiveData(int fd) {
         bytes = recv(fd, buff, sizeof(buff), 0);
 
         if (bytes > 0) {
-            this->clientBuffers[fd].append(buff, bytes);
+            this->client[fd].getReadBuf().append(buff, bytes);
             LOG_DBG("Received chunk (" << fd << ", size: " << bytes << ")");
         } else if (bytes == 0) {
             LOG_WRN("Client <" << fd << "> Disconnected");
@@ -293,7 +291,7 @@ int Server::receiveData(int fd) {
             }
         }
     }
-    if (this->clientBuffers.find(fd) == this->clientBuffers.end())
+    if (this->client.find(fd) == this->client.end())
         return 0;
 
     this->processBufferedMessages(fd);

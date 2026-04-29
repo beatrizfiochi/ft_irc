@@ -10,9 +10,13 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include <cctype>
 #include "Client.hpp"
 
 Client::Client() : fd(-1), nickName(""), userName(""), realName(""),
+              passOk(false), registered(false) {}
+
+Client::Client(int fd) : fd(fd), nickName(""), userName(""), realName(""),
               passOk(false), registered(false) {}
 
 Client::Client(Client const &other) : fd(other.fd), nickName(other.nickName), userName(other.userName),
@@ -32,6 +36,14 @@ Client& Client::operator=(Client const &rhs) {
 }
 
 Client::~Client(){}
+
+std::string& Client::getReadBuf(void) {
+    return this->read_buf;
+}
+
+std::string& Client::getWriteBuf(void) {
+    return this->write_buf;
+}
 
 int Client::handlePass(const std::vector<std::string> &args, const std::string &serverPassword) {
 	if (args.size() < 1) {

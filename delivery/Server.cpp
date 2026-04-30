@@ -166,11 +166,33 @@ int Server::addNewClient(void) {
         close(conn_sock);
         return EXIT_FAILURE;
     }
-    this->client[conn_sock] = Client(conn_sock);
+    this->connectClient(conn_sock);
     return 0;
 }
 
+void Server::addClientToNickList(Client &c, const std::string &oldname) {
+    std::map<std::string, Client*>::iterator i = this->nickList.find(oldname);
+    if (i != this->nickList.end()) {
+        LOG_DBG("Updating the existing nick on the list");
+        this->nickList.erase(oldname);
+    }
+    this->nickList[c.getNick()] = &c;
+}
+
+Client *Server::getClient(const std::string &nick) {
+    if (this->nickList.find(nick) == this->nickList.end())
+        return NULL;
+    return this->nickList[nick];
+}
+
+void Server::connectClient(int fd) {
+    this->client[fd] = Client(fd);
+}
+
 void Server::disconnectClient(int fd) {
+    std::string nick = this->client[fd].getNick();
+    if (!nick.empty())
+        this->nickList.erase(nick);
     this->client.erase(fd);
     // epoll_ctl DEL is automatic on close. Check NOTES on epoll manual
     close(fd);
@@ -239,6 +261,32 @@ void Server::processBufferedMessages(int fd) {
                 break;
         }
     }
+}
+
+int Server::sendMsg(Client &source, Client &target, const std::string &msg) {
+    std::stringstream ss;
+    ss << ":" << source.getNick() <<
+          " PRIVMSG " << target.getNick() <<
+          " :" << msg << "\r\n";
+
+    std::string reply = ss.str();
+    LOG_DBG("PRIVMSG Buffer: " + reply);
+    std::string &out = target.getWriteBuf();
+    bool wasEmpty = out.empty();
+
+    out.append(reply);
+    int target_fd = target.getFd();
+    if (this->flushReplyBuffer(target_fd) < 0)
+        return -1;
+
+    // If the buffer was empty before this reply and flushing left bytes queued,
+    // re-arm EPOLLOUT so the kernel wakes us when the socket can write again.
+    if (wasEmpty && !out.empty() && this->setWriteInterest(target_fd, true) == -1) {
+        LOG_ERR("epoll_ctl MOD failed on fd " << target_fd << ". errno = " << errno);
+        this->disconnectClient(target_fd);
+        return -1;
+    }
+    return 0;
 }
 
 int Server::sendReply(int fd, int err, const std::string &cmd, const std::string &trailing) {

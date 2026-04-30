@@ -17,6 +17,8 @@ int Command::execute(Server &server, Client &client) {
         ret = this->handlePass(server, client);
     else if (this->command == "USER")
         ret = this->handleUser(server, client);
+    else if (this->command == "PRIVMSG")
+        ret = this->handlePrivMsg(server, client);
     else
         ret = this->handleUnknownCommand(server, client);
 

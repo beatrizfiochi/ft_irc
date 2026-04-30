@@ -17,6 +17,8 @@
 #define ERR_NOTREGISTERED 451
 #define ERR_NOTDEFINED 999
 
+#define ERR_NOSUCHNICK  401 // "<nickname> :No such nick/channel"
+
 #define RPL_MOTDSTART   375 // ":- <server> Message of the day - "
 #define RPL_MOTD        372 // ":- <text>"
 #define RPL_ENDOFMOTD   376 // ":End of /MOTD command"
@@ -44,7 +46,7 @@ private:
     int handleUser(Server &server, Client &client);
     int handleMOTD(Server &server, Client &client);
     int handleQuit(const std::vector<std::string> &args);
-    int handlePrivMsg(Server &server, Client &client, const std::vector<std::string> &args);
+    int handlePrivMsg(Server &server, Client &client);
     // int handleJoin(const std::vector<std::string> &args);
 };
 

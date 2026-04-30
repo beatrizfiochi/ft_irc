@@ -42,7 +42,9 @@ int Command::handleNick(Server &server, Client &client) {
     //  if (server.nickExists(newNick))
     //      return ERR_NICKCOLLISION;
 
+    std::string old = client.getNick();
     client.setNick(newNick);
+    server.addClientToNickList(client, old);
 
     return (0);
 }
@@ -62,7 +64,7 @@ int Command::handleUser(Server &server, Client &client) {
     // hostname and servername are ignored
     client.setUser(this->param[0]);
     client.setReal(this->param[3]);
-    if (client.getPassFlag())
+    if (client.getPassFlag() && !client.getNick().empty())
         client.setRegister(true);
 
     return Command::handleMOTD(server, client);
@@ -98,43 +100,40 @@ int Command::handleQuit(const std::vector<std::string> &args) {
     return (0);
 }
 
-int Command::handlePrivMsg(Server &server, Client &client,
-                                  const std::vector<std::string> &args) {
-    (void)client;
-    (void)server;
+int Command::handlePrivMsg(Server &server, Client &client) {
+    if (this->param.size() < 2)
+        return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS,
+                                this->command, "Not enough parameters");
 
-    if (args.size() < 2)
-        return ERR_NEEDMOREPARAMS;
+    if (!client.isRegistered())
+        return server.sendReply(client.getFd(), ERR_NOTREGISTERED,
+                                this->command, "You have not registered");
 
-    // TODO check for client registred
-    // if (!Client.isRegistered())
-    //     return ERR_NOTREGISTERED;
-
-    std::string message = args[1];
+    std::string &target_nick = this->param[0];
+    std::string &message     = this->param[1];
 
     if (message.empty())
-        return ERR_NOTEXTTOSEND;
+        return server.sendReply(client.getFd(), ERR_NOTEXTTOSEND,
+                                "", "No text to send");
 
-//TODOs implement split function
-//      implement Server.getClientByNick
-//      implement Server.sendError
-//      implement Server.sendMessage
-//
-// std::vector<std::string> targets = split(args[0], ',');
+    //TODO: Implement the split() function
+    // std::vector<std::string> targets = split(args[0], ',');
+    LOG_DBG("Sending msg to " + target_nick);
+    std::vector<std::string> targets(1, target_nick);
+    for (size_t i = 0; i < targets.size(); i++) {
+        Client *target_client = server.getClient(targets[i]);
+        if (target_client == NULL){
+            LOG_DBG("Target not found: " + targets[i]);
+            return server.sendReply(client.getFd(), ERR_NOSUCHNICK,
+                                targets[i], "No such nick/channel");
+        }
 
-// for (size_t i = 0; i < targets.size(); ++i) {
-
-//     Client *receiver = Server.getClientByNick(targets[i]);
-
-//     if (!receiver) {
-//         Server.sendError(client, 401, targets[i]);
-//         continue;
-//     }
-
-//     std::string msg = ":" + Client.getNick() +
-//                       " PRIVMSG " + targets[i] + " :" + message;
-
-//     Server.sendMessage(*receiver, msg);
-// }
+        LOG_DBG("Msg to : " + targets[i] + ": " + message);
+        int ret = server.sendMsg(client, *target_client, message);
+        if (ret < 0) {
+            LOG_ERR("Sending msg on PRIVMSG returned error (" << ret << ")");
+            return ret;
+        }
+    }
     return 0;
 }

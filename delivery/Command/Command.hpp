@@ -17,6 +17,10 @@
 #define ERR_NOTREGISTERED 451
 #define ERR_NOTDEFINED 999
 
+#define RPL_MOTDSTART   375 // ":- <server> Message of the day - "
+#define RPL_MOTD        372 // ":- <text>"
+#define RPL_ENDOFMOTD   376 // ":End of /MOTD command"
+
 class Command {
 public:
     static Command *parsing(const std::string &raw);
@@ -38,6 +42,7 @@ private:
     int handlePass(Server &server, Client &client);
     int handleNick(Server &server, Client &client);
     int handleUser(Server &server, Client &client);
+    int handleMOTD(Server &server, Client &client);
     int handleQuit(const std::vector<std::string> &args);
     int handlePrivMsg(Server &server, Client &client, const std::vector<std::string> &args);
     // int handleJoin(const std::vector<std::string> &args);

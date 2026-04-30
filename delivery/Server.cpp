@@ -34,7 +34,7 @@
 // > <official hostname> ::= <hname>
 // > <hname> ::= <name>*["."<name>]
 // > <name>  ::= <let>[*[<let-or-digit-or-hyphen>]<let-or-digit>]
-#define SERVER_PREFIX               ":cbd.42porto.com"
+#define SERVER_HOSTNAME     "cbd.42porto.com"
 
 LOG_REGISTER(server);
 
@@ -47,6 +47,10 @@ Server::Server(unsigned int port, std::string passw) :
 Server::~Server(void) {
     if (this->srv_socket >= 0)
         close(this->srv_socket);
+}
+
+std::string Server::getHostname(void) const {
+    return SERVER_HOSTNAME;
 }
 
 bool Server::checkPass(const std::string &passw) const {
@@ -240,7 +244,7 @@ void Server::processBufferedMessages(int fd) {
 int Server::sendReply(int fd, int err, const std::string &cmd, const std::string &trailing) {
     std::stringstream ss;
     //TODO: Replace the ClientNickname with real nickname
-    ss << SERVER_PREFIX << " " << err << " ClientNickname";
+    ss << ":" << SERVER_HOSTNAME << " " << err << " ClientNickname";
     if (!cmd.empty())
         ss << " " << cmd;
     if (!trailing.empty())

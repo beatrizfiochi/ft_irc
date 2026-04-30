@@ -3,7 +3,6 @@
 
 #include <map>
 #include <string>
-#include <vector>
 #include "Client/Client.hpp"
 
 class Server {
@@ -17,6 +16,7 @@ public:
                   const std::string &cmd,
                   const std::string &trailing);
     bool checkPass(const std::string &passw) const;
+    std::string getHostname(void) const;
 private:
     unsigned int port;
     std::string passw;

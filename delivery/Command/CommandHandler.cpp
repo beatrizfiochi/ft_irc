@@ -65,7 +65,24 @@ int Command::handleUser(Server &server, Client &client) {
     if (client.getPassFlag())
         client.setRegister(true);
 
-    return (0);
+    return Command::handleMOTD(server, client);
+}
+
+int Command::handleMOTD(Server &server, Client &client) {
+    int ret;
+
+    ret = server.sendReply(client.getFd(), RPL_MOTDSTART,
+                            "", "- " + server.getHostname() + " Message of the day -");
+    if (ret > 0) {
+        ret += server.sendReply(client.getFd(), RPL_MOTD,
+                            "", "- Hello!! Funcionou?");
+    }
+
+    if (ret > 0) {
+        ret += server.sendReply(client.getFd(), RPL_ENDOFMOTD,
+                            "", "End of /MOTD command");
+    }
+    return ret;
 }
 
 int Command::handleQuit(const std::vector<std::string> &args) {

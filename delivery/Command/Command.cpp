@@ -74,6 +74,10 @@ Command *Command::parsing(const std::string &raw) {
             LOG_ERR("Parameter (" + token + ") not valid");
             return NULL;
         }
+        // Remove the :
+        if (token[0] == ':') {
+            token.erase(0, 1);
+        }
         param.push_back(token);
     } while (true);
 
@@ -122,9 +126,6 @@ std::string Command::getNextToken(const std::string &str, size_t &pos) {
     (*(result.end() - 2) == '\r') && (*(result.end() - 1) == '\n')) {
         result.erase(result.end() - 2, result.end());
     }
-	if (!result.empty() && result[0] == ':') {
-		result.erase(0, 1);
-	}
     return result;
 }
 

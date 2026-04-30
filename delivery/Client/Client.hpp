@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Client.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: cmoura-p <cmoura-p@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/04/28 11:45:17 by cmoura-p          #+#    #+#             */
-/*   Updated: 2026/04/29 20:19:23 by cmoura-p         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
@@ -42,12 +30,13 @@ class Client {
         std::string& getWriteBuf(void);
         int getFd(void) const;
 
+        std::string getNick(void) const;
+        void setNick(const std::string &nick);
+
 // TODOs
 //         void getUser();
-//         void getNick();
 //         void getReal();
 //
-//         void setNick();
 //         void setUser();
 //         void setReal();
 //

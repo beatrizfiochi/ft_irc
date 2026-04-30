@@ -3,7 +3,6 @@
 
 LOG_REGISTER(Command_handler);
 
-
 int Command::handleUnknownCommand(Server &server, Client &client) {
     return server.sendReply(client.getFd(), 421, this->getCmd(), "Unknown command");
 }
@@ -29,26 +28,21 @@ int Command::handlePass(Server &server, Client &client) {
     return (0);
 }
 
-int Command::handleNick(Client &client, const std::vector<std::string> &args) {
-    (void)client;
-    if (args.size() < 1)
-        return (ERR_NEEDMOREPARAMS);
+int Command::handleNick(Server &server, Client &client) {
+    if (this->param.size() < 1)
+        return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS,
+                                this->command, "Not enough parameters");
 
-    if (args[0].empty() || args[0].size() > 9)
-        return (ERR_ERRONEUSNICKNAME);
-
-    std::string newNick = args[0];
+    std::string newNick = this->param[0];
     if (!isValidNick(newNick))
-        return (ERR_ERRONEUSNICKNAME);
+        return server.sendReply(client.getFd(), ERR_ERRONEUSNICKNAME,
+                                newNick, "Erroneus nickname");
 
-// TODO   **  Nicks list **
-//  if (Server.nickExists(newNick))
-//      return ERR_NICKCOLLISION;
-// Se Client tiver Nick, remover o Nick do Server
-//  if (!Client.getNick().empty())
-//      Server.removeNick(Client.getNick())
-//  Client.setNick(newNick);
-//  Server.addNick(newNick, &client)
+    // TODO   **  Nicks list **
+    //  if (server.nickExists(newNick))
+    //      return ERR_NICKCOLLISION;
+
+    client.setNick(newNick);
 
     return (0);
 }

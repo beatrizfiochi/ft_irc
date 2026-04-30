@@ -10,8 +10,9 @@ int Command::execute(Server &server, Client &client) {
     (void)client;
     int ret = 0;
 
+    //TODO: Move this if/else to a map
     if (this->command == "NICK")
-        LOG_DBG("NICK Command received");
+        ret = this->handleNick(server, client);
     else if (this->command == "PASS")
         ret = this->handlePass(server, client);
     else

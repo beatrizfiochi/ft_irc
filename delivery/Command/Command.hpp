@@ -36,7 +36,7 @@ private:
 
     int handleUnknownCommand(Server &server, Client &client);
     int handlePass(Server &server, Client &client);
-    int handleNick(Client &client, const std::vector<std::string> &args);
+    int handleNick(Server &server, Client &client);
     int handleUser(Client &client, const std::vector<std::string> &args);
     int handleQuit(const std::vector<std::string> &args);
     int handlePrivMsg(Server &server, Client &client, const std::vector<std::string> &args);

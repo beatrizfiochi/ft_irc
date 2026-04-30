@@ -14,8 +14,9 @@ public:
     int run(void);
 
     int sendReply(int fd, int err,
-                  const std::vector<std::string> &params,
+                  const std::string &cmd,
                   const std::string &trailing);
+    bool checkPass(const std::string &passw) const;
 private:
     unsigned int port;
     std::string passw;

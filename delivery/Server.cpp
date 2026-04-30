@@ -49,6 +49,10 @@ Server::~Server(void) {
         close(this->srv_socket);
 }
 
+bool Server::checkPass(const std::string &passw) const {
+    return (this->passw == passw);
+}
+
 int Server::openServerSocket(void) {
     this->srv_socket = socket(AF_INET, (SOCK_STREAM | SOCK_NONBLOCK), 0);
     if(this->srv_socket == -1) { //-> check if the socket is created
@@ -233,14 +237,12 @@ void Server::processBufferedMessages(int fd) {
     }
 }
 
-int Server::sendReply(int fd, int err, const std::vector<std::string> &params, const std::string &trailing) {
+int Server::sendReply(int fd, int err, const std::string &cmd, const std::string &trailing) {
     std::stringstream ss;
     //TODO: Replace the ClientNickname with real nickname
     ss << SERVER_PREFIX << " " << err << " ClientNickname";
-    for (size_t i = 0; i < params.size(); ++i) {
-        if (!params[i].empty())
-            ss << " " << params[i];
-    }
+    if (!cmd.empty())
+        ss << " " << cmd;
     if (!trailing.empty())
         ss << " :" << trailing;
     ss << "\r\n";

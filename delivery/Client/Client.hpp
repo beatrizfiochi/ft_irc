@@ -33,18 +33,16 @@ class Client {
         std::string getNick(void) const;
         void setNick(const std::string &nick);
 
+        void setRegister(bool flag);
+        bool isRegistered() const;
+        void setPassFlag(bool flag);
+
 // TODOs
 //         void getUser();
 //         void getReal();
 //
 //         void setUser();
 //         void setReal();
-//
-// 	       void setRegister("true");
-//         void setPassOK("true");
-//
-//         bool isRegistered();
-
 };
 
 #endif

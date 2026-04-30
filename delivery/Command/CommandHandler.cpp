@@ -1,20 +1,31 @@
 #include "Command.hpp"
+#include "../log.hpp"
+
+LOG_REGISTER(Command_handler);
 
 
 int Command::handleUnknownCommand(Server &server, Client &client) {
-    std::vector<std::string> param(1, this->getCmd());
-    return server.sendReply(client.getFd(), 421, param, "Unknown command");
+    return server.sendReply(client.getFd(), 421, this->getCmd(), "Unknown command");
 }
 
-int Command::handlePass(Client &client, const std::vector<std::string> &args, const std::string &serverPassword) {
-    (void)client;
-    if (args.size() < 1)
-        return (ERR_NEEDMOREPARAMS);
+int Command::handlePass(Server &server, Client &client) {
+    if (this->param.size() < 1) {
+        return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS, this->command, "Not enough parameters");
+    }
 
-    if (args[0] != serverPassword)
-        return (ERR_NOTDEFINED);
-// TODO     SetPass
-//  Client.setPassOK("true");
+    if (client.isRegistered()) {
+        LOG_DBG("User is already registered");
+        return server.sendReply(client.getFd(), ERR_ALREADYREGISTRED, "", "You may not reregister");
+    }
+
+    if (!server.checkPass(this->param[0])) {
+        LOG_DBG("Incorrect Password");
+        return server.sendReply(client.getFd(), ERR_PASSWDMISMATCH, "", "Password incorrect");
+    }
+
+    LOG_DBG("Correct password");
+    client.setPassFlag(true);
+
     return (0);
 }
 

@@ -12,6 +12,8 @@ int Command::execute(Server &server, Client &client) {
 
     if (this->command == "NICK")
         LOG_DBG("NICK Command received");
+    else if (this->command == "PASS")
+        ret = this->handlePass(server, client);
     else
         ret = this->handleUnknownCommand(server, client);
 

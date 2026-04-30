@@ -52,6 +52,18 @@ void Client::setNick(const std::string &nick) {
     this->nickName = nick;
 }
 
+void Client::setRegister(bool flag) {
+    this->registered = flag;
+}
+
+bool Client::isRegistered(void) const {
+    return this->registered;
+}
+
+void Client::setPassFlag(bool flag) {
+    this->passOk = flag;
+}
+
 // TODOs
 //         void getUser();
 //         void getReal();

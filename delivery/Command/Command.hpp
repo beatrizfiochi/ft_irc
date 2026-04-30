@@ -9,7 +9,8 @@
 // ERROR MESSAGES
 #define ERR_NOTEXTTOSEND 412
 #define ERR_NEEDMOREPARAMS 461
-#define ERR_ALREADYREGISTERED 462
+#define ERR_ALREADYREGISTRED 462
+#define ERR_PASSWDMISMATCH 464
 #define ERR_NICKCOLLISION 436
 #define ERR_ERRONEUSNICKNAME 432
 #define ERR_NONICKNAMEGIVEN 431
@@ -34,7 +35,7 @@ private:
     bool isValidNick(const std::string &nickname);
 
     int handleUnknownCommand(Server &server, Client &client);
-    int handlePass(Client &Client, const std::vector<std::string> &args, const std::string &serverPassword);
+    int handlePass(Server &server, Client &client);
     int handleNick(Client &client, const std::vector<std::string> &args);
     int handleUser(Client &client, const std::vector<std::string> &args);
     int handleQuit(const std::vector<std::string> &args);

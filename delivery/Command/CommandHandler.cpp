@@ -47,17 +47,24 @@ int Command::handleNick(Server &server, Client &client) {
     return (0);
 }
 
-int Command::handleUser(Client &client, const std::vector<std::string> &args) {
-    (void)client;
-    if (args.size() < 4)
-        return (ERR_NEEDMOREPARAMS);
-// TODO   ** check if user is already registered
-//      if (Client.isRegistered())
-//          return (ERR_ALREADYREGISTERED);
-// Setup User information
-//      Client.setUser(args[0]);
-//      Client.setReal(args[3]);
-//      Client.setRegister(true);
+// Command: USER
+// Parameters: <username> <hostname> <servername> <realname>
+int Command::handleUser(Server &server, Client &client) {
+    if (this->param.size() < 4)
+        return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS,
+                                this->command, "Not enough parameters");
+
+    if (client.isRegistered())
+        return server.sendReply(client.getFd(), ERR_ALREADYREGISTRED,
+                                this->command, "You may not reregister");
+
+    // Setup User information
+    // hostname and servername are ignored
+    client.setUser(this->param[0]);
+    client.setReal(this->param[3]);
+    if (client.getPassFlag())
+        client.setRegister(true);
+
     return (0);
 }
 

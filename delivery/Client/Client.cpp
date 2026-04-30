@@ -60,8 +60,28 @@ bool Client::isRegistered(void) const {
     return this->registered;
 }
 
+bool Client::getPassFlag(void) {
+    return this->passOk;
+}
+
 void Client::setPassFlag(bool flag) {
     this->passOk = flag;
+}
+
+std::string Client::getUser(void) const {
+    return this->userName;
+}
+
+void Client::setUser(const std::string &username) {
+    this->userName = username;
+}
+
+std::string Client::getReal(void) const {
+    return this->realName;
+}
+
+void Client::setReal(const std::string &realname) {
+    this->realName = realname;
 }
 
 // TODOs

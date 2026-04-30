@@ -15,6 +15,8 @@ int Command::execute(Server &server, Client &client) {
         ret = this->handleNick(server, client);
     else if (this->command == "PASS")
         ret = this->handlePass(server, client);
+    else if (this->command == "USER")
+        ret = this->handleUser(server, client);
     else
         ret = this->handleUnknownCommand(server, client);
 

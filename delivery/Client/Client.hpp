@@ -34,15 +34,15 @@ class Client {
         void setNick(const std::string &nick);
 
         void setRegister(bool flag);
-        bool isRegistered() const;
+        bool isRegistered(void) const;
+        bool getPassFlag(void);
         void setPassFlag(bool flag);
 
-// TODOs
-//         void getUser();
-//         void getReal();
-//
-//         void setUser();
-//         void setReal();
+        std::string getUser(void) const;
+        void setUser(const std::string &username);
+
+        std::string getReal(void) const;
+        void setReal(const std::string &realname);
 };
 
 #endif

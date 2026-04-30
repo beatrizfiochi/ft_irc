@@ -205,9 +205,3 @@ const std::string& Command::getCmd(void) const {
 const std::vector<std::string>& Command::getParams(void) const {
     return this->param;
 }
-
-int Command::handleUnknownCommand(Server &server, Client &client) {
-    std::vector<std::string> param(1, this->getCmd());
-    return server.sendReply(client.getFd(), 421, param, "Unknown command");
-}
-

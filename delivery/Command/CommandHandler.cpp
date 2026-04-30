@@ -1,6 +1,11 @@
 #include "Command.hpp"
 
 
+int Command::handleUnknownCommand(Server &server, Client &client) {
+    std::vector<std::string> param(1, this->getCmd());
+    return server.sendReply(client.getFd(), 421, param, "Unknown command");
+}
+
 int Command::handlePass(Client &client, const std::vector<std::string> &args, const std::string &serverPassword) {
     (void)client;
     if (args.size() < 1)

@@ -21,6 +21,7 @@ public:
     static Command *parsing(const std::string &raw);
     const std::string& getCmd(void) const;
     const std::vector<std::string>& getParams(void) const;
+    int execute(Server &server, Client &client);
 private:
     std::string command;
     std::vector<std::string> param;
@@ -32,13 +33,13 @@ private:
     static bool isValidParam(const std::string &param);
     bool isValidNick(const std::string &nickname);
 
+    int handleUnknownCommand(Server &server, Client &client);
     int handlePass(Client &Client, const std::vector<std::string> &args, const std::string &serverPassword);
     int handleNick(Client &client, const std::vector<std::string> &args);
     int handleUser(Client &client, const std::vector<std::string> &args);
     int handleQuit(const std::vector<std::string> &args);
     int handlePrivMsg(Server &server, Client &client, const std::vector<std::string> &args);
     // int handleJoin(const std::vector<std::string> &args);
-
 };
 
 #endif // _COMMAND_HPP_

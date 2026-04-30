@@ -40,6 +40,7 @@ class Client {
 
         std::string& getReadBuf(void);
         std::string& getWriteBuf(void);
+        int getFd(void) const;
 
 // TODOs
 //         void getUser();

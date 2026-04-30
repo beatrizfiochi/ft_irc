@@ -12,6 +12,10 @@ public:
     Server(unsigned int port, std::string passw);
     ~Server(void);
     int run(void);
+
+    int sendReply(int fd, int err,
+                  const std::vector<std::string> &params,
+                  const std::string &trailing);
 private:
     unsigned int port;
     std::string passw;
@@ -26,9 +30,6 @@ private:
     int receiveData(int fd);
     int flushReplyBuffer(int fd);
     int setWriteInterest(int fd, bool enabled);
-    int sendReply(int fd, int err,
-                  const std::vector<std::string> &params,
-                  const std::string &trailing);
     void disconnectClient(int fd);
     void processBufferedMessages(int fd);
 };

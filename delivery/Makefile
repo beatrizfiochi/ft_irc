@@ -8,6 +8,7 @@ SRCS = $(SRCS_DIR)/main.cpp \
 	$(SRCS_DIR)/Server.cpp \
 	$(SRCS_DIR)/Command/Command.cpp \
 	$(SRCS_DIR)/Command/CommandHandler.cpp \
+	$(SRCS_DIR)/Command/CommandExecute.cpp \
 	$(SRCS_DIR)/Client/Client.cpp \
 
 OBJS_DIR = objs

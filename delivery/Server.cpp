@@ -225,11 +225,10 @@ void Server::processBufferedMessages(int fd) {
 
         Command *cmd = Command::parsing(message);
         if (cmd != NULL) {
-            //TODO: Every command is sending 421 as no command is implemented yet. This will be done in the next PRs
-            std::vector<std::string> param(1, cmd->getCmd());
+            int ret = cmd->execute(*this, this->client[fd]);
             delete cmd;
-            if (this->sendReply(fd, 421, param, "Unknown command") < 0)
-                return;
+            if (ret < 0)
+                break;
         }
     }
 }

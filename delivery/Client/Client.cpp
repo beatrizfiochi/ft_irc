@@ -33,6 +33,10 @@ std::string& Client::getWriteBuf(void) {
     return this->write_buf;
 }
 
+int Client::getFd(void) const {
+    return this->fd;
+}
+
 // TODOs
 //         void getUser();
 //         void getNick();

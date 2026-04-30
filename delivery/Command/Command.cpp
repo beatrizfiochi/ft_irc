@@ -119,9 +119,12 @@ std::string Command::getNextToken(const std::string &str, size_t &pos) {
     std::string result = std::string(str, start, pos - start);
 
     if ((result.length() > 2) && \
-        (*(result.end() - 2) == '\r') && (*(result.end() - 1) == '\n')) {
+    (*(result.end() - 2) == '\r') && (*(result.end() - 1) == '\n')) {
         result.erase(result.end() - 2, result.end());
     }
+	if (!result.empty() && result[0] == ':') {
+		result.erase(0, 1);
+	}
     return result;
 }
 
@@ -169,6 +172,30 @@ bool Command::isValidParam(const std::string &param) {
             return false;
     }
     return true;
+}
+
+
+// <nick> = <letter> { <letter> | <number> | <special> }
+// <letter> = 'a' ... 'z' | 'A' ... 'Z'
+// <number> = '0' ... '9'
+// <special> = '-' | '[' | ']' | '\' | '`' | '^' | '{' | '}'
+bool Command::isValidNick(const std::string &nickname) {
+
+	if (nickname.empty())
+		return false;
+
+	unsigned char first = (unsigned char)nickname[0];
+	if (!std::isalpha(first))
+		return false;
+	for (size_t i = 1; i < nickname.size(); ++i) {
+		unsigned char c = (unsigned char)nickname[i];
+		if (!std::isalnum(c) && c != '-' && c != '[' &&
+		    c != ']' && c != '\\' && c != '^' && c != '_' &&
+		    c != '{' && c != '}' && c != '|' && c != '`') {
+			return false;
+		}
+	}
+	return true;
 }
 
 const std::string& Command::getCmd(void) const {

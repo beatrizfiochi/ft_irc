@@ -6,7 +6,7 @@
 /*   By: cmoura-p <cmoura-p@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 11:45:17 by cmoura-p          #+#    #+#             */
-/*   Updated: 2026/04/29 14:32:09 by cmoura-p         ###   ########.fr       */
+/*   Updated: 2026/04/29 20:19:23 by cmoura-p         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,14 +15,6 @@
 
 #include <string>
 #include <vector>
-
-// CLIENT ERRORS
-#define ERR_NEEDMOREPARAMS 461
-#define ERR_ALREADYREGISTERED 462
-#define ERR_NICKCOLLISION 436
-#define ERR_ERRONEUSNICKNAME 432
-#define ERR_NONICKNAMEGIVEN 431
-#define ERR_NOTDEFINED 999
 
 class Client {
     private:
@@ -49,17 +41,20 @@ class Client {
         std::string& getReadBuf(void);
         std::string& getWriteBuf(void);
 
-    /*  void getUserN();
-        void getNickN();
-        void getRealN();
-    */
+// TODOs
+//         void getUser();
+//         void getNick();
+//         void getReal();
+//
+//         void setNick();
+//         void setUser();
+//         void setReal();
+//
+// 	       void setRegister("true");
+//         void setPassOK("true");
+//
+//         bool isRegistered();
 
-        int handlePass(const std::vector<std::string> &args, const std::string &serverPassword);
-        int handleNick(const std::vector<std::string> &args);
-        int handleUser(const std::vector<std::string> &args);
-//		int handleQuit(const std::vector<std::string> &args);
-
-        static bool isValidNick(const std::string &nickname);
 };
 
 #endif

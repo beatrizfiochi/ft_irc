@@ -35,6 +35,7 @@ nc -C 127.0.0.1 6667
 
 # TODOs
 
+- [ ] Reminder to add 42Header in all files
 - [ ] Should run as `./ircserv <port> <password>`
 - [ ] README: Fill the Description section
 - [ ] README: Fill the Instruction section

@@ -3,6 +3,18 @@
 
 #include <string>
 #include <vector>
+#include "../Client/Client.hpp"
+#include "../Server.hpp"
+
+// ERROR MESSAGES
+#define ERR_NOTEXTTOSEND 412
+#define ERR_NEEDMOREPARAMS 461
+#define ERR_ALREADYREGISTERED 462
+#define ERR_NICKCOLLISION 436
+#define ERR_ERRONEUSNICKNAME 432
+#define ERR_NONICKNAMEGIVEN 431
+#define ERR_NOTREGISTERED 451
+#define ERR_NOTDEFINED 999
 
 class Command {
 public:
@@ -18,6 +30,15 @@ private:
     static std::string getNextToken(const std::string &str, size_t &pos);
     static bool isValidCommand(const std::string &cmd);
     static bool isValidParam(const std::string &param);
+    bool isValidNick(const std::string &nickname);
+
+    int handlePass(Client &Client, const std::vector<std::string> &args, const std::string &serverPassword);
+    int handleNick(Client &client, const std::vector<std::string> &args);
+    int handleUser(Client &client, const std::vector<std::string> &args);
+    int handleQuit(const std::vector<std::string> &args);
+    int handlePrivMsg(Server &server, Client &client, const std::vector<std::string> &args);
+    // int handleJoin(const std::vector<std::string> &args);
+
 };
 
 #endif // _COMMAND_HPP_

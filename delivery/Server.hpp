@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "client/Client.hpp"
+#include "Client/Client.hpp"
 
 class Server {
 public:

@@ -51,6 +51,10 @@ nc -C 127.0.0.1 6667
         - [ ] USER
         - [ ] JOIN
         - [ ] PRIVMSG
+        - [ ] PASS
+        - [ ] PART
+        - [ ] NAMES
+        - [ ] 421 ERR_UNKNOWNCOMMAND - when we receive an unknown command
         - [ ] check others...
     - [ ] All the messages sent from one client to a channel have to be forwarded to every other client that joined the channel.
     - [ ] You must have operators and regular users.

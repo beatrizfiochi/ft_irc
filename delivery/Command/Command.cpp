@@ -207,3 +207,4 @@ const std::string& Command::getCmd(void) const {
 const std::vector<std::string>& Command::getParams(void) const {
     return this->param;
 }
+

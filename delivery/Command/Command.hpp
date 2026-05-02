@@ -53,7 +53,7 @@ private:
     int handlePrivMsg(Server &server, Client &client);
     int handleKick(Server &server, Client &client);
     int handleInvite(Server &server, Client &client);
-    // int handleJoin(const std::vector<std::string> &args);
+    int handleJoin(Server &server, Client &client, const std::vector<std::string> &args);
 };
 
 #endif // _COMMAND_HPP_

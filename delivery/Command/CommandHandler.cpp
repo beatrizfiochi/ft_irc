@@ -117,7 +117,7 @@ int Command::handlePrivMsg(Server &server, Client &client) {
                                 "", "No text to send");
 
     //TODO: Implement the split() function
-    // std::vector<std::string> targets = split(args[0], ',');
+    // static std::vector<std::string> split(const std::string& str, char delimiter);
     LOG_DBG("Sending msg to " + target_nick);
     std::vector<std::string> targets(1, target_nick);
     for (size_t i = 0; i < targets.size(); i++) {

@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/epoll.h>
 #include <arpa/inet.h>  // inet_ntop()
+#include <utility> // make_pair(t1, t2)
 
 #include "Server.hpp"
 #include "Command/Command.hpp"
@@ -190,10 +191,16 @@ void Server::connectClient(int fd) {
 }
 
 void Server::disconnectClient(int fd) {
-    std::string nick = this->client[fd].getNick();
-    if (!nick.empty())
-        this->nickList.erase(nick);
-    this->client.erase(fd);
+    removeClientFromChannels(fd);
+    std::map<int, Client>::iterator it = client.find(fd);
+        if (it != client.end())
+        {
+            std::string nick = it->second.getNick();
+            if (!nick.empty())
+                nickList.erase(nick);
+
+            client.erase(it);
+        }
     // epoll_ctl DEL is automatic on close. Check NOTES on epoll manual
     close(fd);
 }
@@ -357,3 +364,48 @@ int Server::run(void) {
         return ret;
     return listenEvents();
 }
+
+Channel* Server::getChannel(const std::string &name) {
+    std::map<std::string, Channel>::iterator i = this->channels.find(name);
+    if (i == this->channels.end())
+        return NULL;
+    return &(i->second);
+}
+
+Channel& Server::createChannel(const std::string &name) {
+    std::pair<std::map<std::string, Channel>::iterator, bool> result;
+
+    //  Insert the channel if it does not exist yet; otherwise get the existing one
+    result = this->channels.insert(std::make_pair(name, Channel(name)));
+
+    return result.first->second;
+}
+
+void Server::removeChannel(const std::string &name) {
+    this->channels.erase(name);
+}
+
+void Server::removeClientFromChannels(int fd) {
+    for(std::map<std::string, Channel>::iterator i = channels.begin();
+        i != channels.end(); ++i) {
+            if(i->second.isMember(fd))
+                i->second.removeClient(fd);
+        }
+}
+
+// TO-DO
+// Implementate the brooadcastToChannel
+// void Server::broadcastToChannel(Channel& ch, const std::string& msg, int excludeFd)
+// {
+//     for (std::set<int>::iterator it = ch.getMembers().begin();
+//          it != ch.getMembers().end();
+//          ++it)
+//     {
+//         int fd = *it;
+
+//         if (fd == excludeFd)
+//             continue;
+
+//         this->client.at(fd).getWriteBuf() += msg + "\r\n";
+//     }
+// }

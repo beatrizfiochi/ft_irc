@@ -1,5 +1,4 @@
 #include "Channel.hpp"
-#include "../Client/Client.hpp"
 
 Channel::Channel(void)
         : name(""), topic(""),
@@ -40,47 +39,25 @@ const std::string Channel::getName(void) const {
     return this->name;
 }
 
-void Channel::addClient(Client& client) {
-    if(isMember(client))
-        return;
-
-    int clientFd = client.getFd();
-
-    members[clientFd] = &client;
-
-    if (members.size() == 1)
-        operators[clientFd] = &client;
-}
-
-void Channel::removeClient(Client& client) {
-    if(!isMember(client))
-        return;
-
-    int clientFd = client.getFd();
-
-    if(isOperator(client))
-        operators.erase(clientFd);
-
-    members.erase(clientFd);
-}
-
-bool Channel::isMember(Client& client) const {
-    return members.find(client.getFd()) != members.end();
-}
-
-bool Channel::isOperator(Client& client) const {
-    return operators.find(client.getFd()) != operators.end();
-}
-
-void Channel::broadcast(const std::string& msg, Client *exclude) {
-    for(std::map<int, Client*>::iterator i = members.begin(); i != members.end(); i++) {
-        Client *client = i->second;
-
-        if(exclude && client == exclude)
-            continue;
-
-        client->getWriteBuf() += msg + "\r\n";
+void Channel::addClient(int fd) {
+    if(members.insert(fd).second)
+    {
+        if(members.size() == 1)
+            operators.insert(fd);
     }
+}
+
+void Channel::removeClient(int fd) {
+    operators.erase(fd);
+    members.erase(fd);
+}
+
+bool Channel::isMember(int fd) const {
+    return members.find(fd) != members.end();
+}
+
+bool Channel::isOperator(int fd) const {
+    return operators.find(fd) != operators.end();
 }
 
 void Channel::setTopic(const std::string& topic) {
@@ -89,4 +66,9 @@ void Channel::setTopic(const std::string& topic) {
 
 const std::string Channel::getTopic(void) const {
     return this->topic;
+}
+
+const std::set<int>& Channel::getMembers() const
+{
+    return members;
 }

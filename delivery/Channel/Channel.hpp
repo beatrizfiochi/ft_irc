@@ -2,7 +2,7 @@
 # define CHANNEL_HPP
 
 # include <string>
-# include <map>
+# include <set>
 
 class Client;
 
@@ -11,8 +11,8 @@ class Channel {
         std::string name;
         std::string topic;
 
-        std::map<int, Client*> members; // fd -> client
-        std::map<int, Client*> operators;
+        std::set<int> members;
+        std::set<int> operators;
 
         bool inviteOnly;
         bool topicRestricted;
@@ -28,16 +28,16 @@ class Channel {
 
         const std::string getName(void) const;
 
-        void addClient(Client& client);
-        void removeClient(Client& client);
+        void addClient(int fd);
+        void removeClient(int fd);
 
-        bool isMember(Client& client) const;
-        bool isOperator(Client& client) const;
-
-        void broadcast(const std::string& msg, Client *exclude = NULL);
+        bool isMember(int fd) const;
+        bool isOperator(int fd) const;
 
         void setTopic(const std::string& topic);
         const std::string getTopic(void) const;
+
+        const std::set<int>& getMembers() const;
 };
 
 #endif // CHANNEL_HPP

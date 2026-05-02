@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include "Client/Client.hpp"
+#include "Channel/Channel.hpp"
 
 class Server {
 public:
@@ -22,6 +23,15 @@ public:
     std::string getHostname(void) const;
     void addClientToNickList(Client &c, const std::string &oldname);
     Client *getClient(const std::string &nick);
+
+    // Channel integration
+    Channel* getChannel(const std::string &name);
+    Channel& createChannel(const std::string &name);
+    void removeChannel(const std::string &name);
+
+    // TO-DO
+    // void broadcastToChannel(Channel& ch, const std::string& msg, int excludeFd = -1)
+
 private:
     unsigned int port;
     std::string passw;
@@ -40,5 +50,10 @@ private:
     void connectClient(int fd);
     void disconnectClient(int fd);
     void processBufferedMessages(int fd);
+
+    // Channel integration
+    std::map<std::string, Channel> channels;
+
+    void removeClientFromChannels(int fd);
 };
 #endif // _SERVER_HPP_

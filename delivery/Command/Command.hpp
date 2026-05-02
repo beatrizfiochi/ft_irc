@@ -7,21 +7,25 @@
 #include "../Server.hpp"
 
 // ERROR MESSAGES
-#define ERR_NOTEXTTOSEND 412
-#define ERR_NEEDMOREPARAMS 461
-#define ERR_ALREADYREGISTRED 462
-#define ERR_PASSWDMISMATCH 464
-#define ERR_NICKCOLLISION 436
-#define ERR_ERRONEUSNICKNAME 432
-#define ERR_NONICKNAMEGIVEN 431
-#define ERR_NOTREGISTERED 451
-#define ERR_NOTDEFINED 999
+#define ERR_NOTEXTTOSEND        412
+#define ERR_NEEDMOREPARAMS      461
+#define ERR_ALREADYREGISTRED    462
+#define ERR_PASSWDMISMATCH      464
+#define ERR_NICKCOLLISION       436
+#define ERR_ERRONEUSNICKNAME    432
+#define ERR_NONICKNAMEGIVEN     431
+#define ERR_NOTREGISTERED       451
+#define ERR_NOSUCHCHANNEL       403
+#define ERR_CHANOPRIVSNEEDED    482
+#define ERR_USERNOTINCHANNEL    441
+#define ERR_NOTDEFINED          999
 
 #define ERR_NOSUCHNICK  401 // "<nickname> :No such nick/channel"
 
 #define RPL_MOTDSTART   375 // ":- <server> Message of the day - "
 #define RPL_MOTD        372 // ":- <text>"
 #define RPL_ENDOFMOTD   376 // ":End of /MOTD command"
+#define RPL_INVITING    341
 
 class Command {
 public:
@@ -47,6 +51,8 @@ private:
     int handleMOTD(Server &server, Client &client);
     int handleQuit(const std::vector<std::string> &args);
     int handlePrivMsg(Server &server, Client &client);
+    int handleKick(Server &server, Client &client);
+    int handleInvite(Server &server, Client &client);
     // int handleJoin(const std::vector<std::string> &args);
 };
 

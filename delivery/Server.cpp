@@ -193,14 +193,13 @@ void Server::connectClient(int fd) {
 void Server::disconnectClient(int fd) {
     removeClientFromChannels(fd);
     std::map<int, Client>::iterator it = client.find(fd);
-        if (it != client.end())
-        {
-            std::string nick = it->second.getNick();
-            if (!nick.empty())
-                nickList.erase(nick);
+    if (it != client.end()) {
+        std::string nick = it->second.getNick();
+        if (!nick.empty())
+            nickList.erase(nick);
 
-            client.erase(it);
-        }
+        client.erase(it);
+    }
     // epoll_ctl DEL is automatic on close. Check NOTES on epoll manual
     close(fd);
 }
@@ -270,14 +269,21 @@ void Server::processBufferedMessages(int fd) {
     }
 }
 
-int Server::sendMsg(Client &source, Client &target, const std::string &msg) {
+int Server::sendPrivMsg(Client &source, Client &target, const std::string &msg) {
+    std::string target_msg = "PRIVMSG " + target.getNick();
+    return this->sendGenericMsg(source, target, target_msg, msg);
+}
+
+int Server::sendGenericMsg(Client &source, Client &target,
+                           const std::string &target_msg, const std::string &msg) {
     std::stringstream ss;
     ss << ":" << source.getNick() <<
-          " PRIVMSG " << target.getNick() <<
-          " :" << msg << "\r\n";
+          " " << target_msg;
+    if (!msg.empty())
+        ss << " :" << msg;
+    ss << "\r\n";
 
     std::string reply = ss.str();
-    LOG_DBG("PRIVMSG Buffer: " + reply);
     std::string &out = target.getWriteBuf();
     bool wasEmpty = out.empty();
 
@@ -297,31 +303,15 @@ int Server::sendMsg(Client &source, Client &target, const std::string &msg) {
 }
 
 int Server::sendReply(int fd, int err, const std::string &cmd, const std::string &trailing) {
+    //TODO: Move this Client server to internal attribute
+    Client server(this->srv_socket, SERVER_HOSTNAME);
     std::stringstream ss;
-    //TODO: Replace the ClientNickname with real nickname
-    ss << ":" << SERVER_HOSTNAME << " " << err << " ClientNickname";
+    ss << err << " " << this->client[fd].getNick();
     if (!cmd.empty())
         ss << " " << cmd;
-    if (!trailing.empty())
-        ss << " :" << trailing;
-    ss << "\r\n";
+    std::string target_msg = ss.str();
 
-    std::string reply = ss.str();
-    std::string &out = this->client[fd].getWriteBuf();
-    bool wasEmpty = out.empty();
-
-    out.append(reply);
-    if (this->flushReplyBuffer(fd) < 0)
-        return -1;
-
-    // If the buffer was empty before this reply and flushing left bytes queued,
-    // re-arm EPOLLOUT so the kernel wakes us when the socket can write again.
-    if (wasEmpty && !out.empty() && this->setWriteInterest(fd, true) == -1) {
-        LOG_ERR("epoll_ctl MOD failed on fd " << fd << ". errno = " << errno);
-        this->disconnectClient(fd);
-        return -1;
-    }
-    return 0;
+    return this->sendGenericMsg(server, this->client[fd], target_msg, trailing);
 }
 
 int Server::receiveData(int fd) {

@@ -4,12 +4,17 @@
 
 LOG_REGISTER(client);
 
-Client::Client() : fd(-1), nickName(""), userName(""), realName(""),
+Client::Client() : fd(-1), nickName("*"), userName(""), realName(""),
               passOk(false), registered(false) {}
 
-Client::Client(int fd) : fd(fd), nickName(""), userName(""), realName(""),
+Client::Client(int fd) : fd(fd), nickName("*"), userName(""), realName(""),
               passOk(false), registered(false) {
     LOG_INF("Client " << fd << " created");
+}
+
+Client::Client(int fd, std::string nickname) : fd(fd), nickName(nickname), userName(""), realName(""),
+              passOk(false), registered(false) {
+    LOG_INF("Client " << fd << ", " << nickname << " created");
 }
 
 Client::Client(Client const &other) : fd(other.fd), nickName(other.nickName), userName(other.userName),

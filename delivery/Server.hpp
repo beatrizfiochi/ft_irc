@@ -13,7 +13,9 @@ public:
     ~Server(void);
     int run(void);
 
-    int sendMsg(Client &source,
+    int sendGenericMsg(Client &source, Client &target,
+                       const std::string &target_msg, const std::string &msg);
+    int sendPrivMsg(Client &source,
                 Client &target,
                 const std::string &msg);
     int sendReply(int fd, int err,
@@ -40,6 +42,8 @@ private:
     // Client map <fd, Client>
     std::map<int, Client>           client;
     std::map<std::string, Client*>  nickList;
+    // Channel integration
+    std::map<std::string, Channel> channels;
 
     int openServerSocket(void);
     int listenEvents(void);
@@ -51,8 +55,6 @@ private:
     void disconnectClient(int fd);
     void processBufferedMessages(int fd);
 
-    // Channel integration
-    std::map<std::string, Channel> channels;
 
     void removeClientFromChannels(int fd);
 };

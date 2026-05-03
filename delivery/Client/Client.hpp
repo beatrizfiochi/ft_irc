@@ -22,6 +22,7 @@ class Client {
     public:
         Client();
         Client(int fd);
+        Client(int fd, std::string nickname);
         Client(Client const &other);
         Client& operator=(Client const &rhs);
         ~Client();

@@ -64,7 +64,7 @@ int Command::handleUser(Server &server, Client &client) {
     // hostname and servername are ignored
     client.setUser(this->param[0]);
     client.setReal(this->param[3]);
-    if (client.getPassFlag() && !client.getNick().empty())
+    if (client.getPassFlag() && (client.getNick() != "*"))
         client.setRegister(true);
 
     return Command::handleMOTD(server, client);
@@ -129,7 +129,7 @@ int Command::handlePrivMsg(Server &server, Client &client) {
         }
 
         LOG_DBG("Msg to : " + targets[i] + ": " + message);
-        int ret = server.sendMsg(client, *target_client, message);
+        int ret = server.sendPrivMsg(client, *target_client, message);
         if (ret < 0) {
             LOG_ERR("Sending msg on PRIVMSG returned error (" << ret << ")");
             return ret;

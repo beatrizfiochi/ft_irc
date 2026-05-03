@@ -2,7 +2,7 @@
 #include "../log.hpp"
 #include <vector>
 #include "../utils/utils.hpp"
-#include "../../Server.hpp"
+#include "../Server.hpp"
 
 LOG_REGISTER(Command_handler_JOIN);
 
@@ -11,14 +11,22 @@ struct JoinTarget {
     std::string key;
 };
 
+// Examples from RFC:
+//   JOIN #foobar                    ; join channel #foobar.
+//   JOIN &foo fubar                 ; join channel &foo using key "fubar".
+//   JOIN #foo,&bar fubar            ; join channel #foo using key "fubar"
+//                                   and &bar using no key.
+//   JOIN #foo,#bar fubar,foobar     ; join channel #foo using key "fubar".
+//                                   and channel #bar using key "foobar".
+//   JOIN #foo,#bar                  ; join channels #foo and #bar.
+//   :WiZ JOIN #Twilight_zone        ; JOIN message from WiZ
 static std::vector<JoinTarget> parseChannelsAndKeys(const std::vector<std::string>& args) {
     std::vector<JoinTarget> targets;
 
-    // split channels
-    std::vector<std::string> channels = split(args[1], ',');
-
-    // split keys
-    std::vector<std::string> keys = split(args[2], ',');
+    std::vector<std::string> channels = split(args[0], ',');
+    std::vector<std::string> keys;
+    if (args.size() > 1)
+        keys = split(args[1], ',');
 
     for (size_t i = 0; i < channels.size(); i++) {
         std::string ch = channels[i];
@@ -67,46 +75,39 @@ static bool isValidChannelName(const std::string &name)
 // (limite de pessoas no canal e limite de canais para aquele client))
 // se passar pelas restricoes -> adiciona ao canal
 // broadcast da mensagem
-
-int Command::handleJoin(Server &server, Client &client, const std::vector<std::string> &args)
+int Command::handleJoin(Server &server, Client &client)
 {
-    if (args.size() < 2)
+    if (this->param.size() < 1)
         return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS,
-                            "JOIN", "Not enough parameters");
+                            this->getCmd(), "Not enough parameters");
 
     if (!client.isRegistered())
         return server.sendReply(client.getFd(), ERR_NOTREGISTERED,
-                            "JOIN", "You have not registered");
+                            "", "You have not registered");
 
-    std::vector<JoinTarget> targets = parseChannelsAndKeys(args);
+    std::vector<JoinTarget> targets = parseChannelsAndKeys(this->param);
 
-    for (size_t i = 0; i < targets.size(); i++)
-    {
+    for (size_t i = 0; i < targets.size(); i++) {
         std::string channelName = targets[i].channel;
         std::string key         = targets[i].key;
 
-        if (!isValidChannelName(channelName))
-        {
+        if (!isValidChannelName(channelName)) {
             server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL,
-                            channelName, "Invalid channel name");
+                            channelName, "No such channel");
             continue;
         }
 
         Channel* ch = server.getChannel(channelName);
+        if (ch == NULL) {
+            ch = &server.createChannel(channelName);
 
-    //     if (ch == NULL)
-    //     {
-    //         ch = server.createChannel(channelName);
+            ch->addClient(client.getFd());
+            server.broadcastMsg(*ch, client, "JOIN " + channelName, "");
+            // sendTopic(server, client, *ch);
+            // sendNames(server, client, *ch);
 
-    //         ch->addUser(&client);
-    //         ch->addOperator(&client);
-
-    //         broadcastJoin(server, client, *ch);
-    //         sendTopic(server, client, *ch);
-    //         sendNames(server, client, *ch);
-
-    //         continue;
-    //     }
+            continue;
+        }
 
     //     // =========================================================
     //     // CASO 2: canal já existe → validar regras
@@ -143,9 +144,7 @@ int Command::handleJoin(Server &server, Client &client, const std::vector<std::s
     //     broadcastJoin(server, client, *ch);
     //     sendTopic(server, client, *ch);
     //     sendNames(server, client, *ch);
-    // }
+    }
 
     return 0;
 }
-
-

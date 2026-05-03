@@ -383,19 +383,17 @@ void Server::removeClientFromChannels(int fd) {
         }
 }
 
-// TO-DO
-// Implementate the brooadcastToChannel
-// void Server::broadcastToChannel(Channel& ch, const std::string& msg, int excludeFd)
-// {
-//     for (std::set<int>::iterator it = ch.getMembers().begin();
-//          it != ch.getMembers().end();
-//          ++it)
-//     {
-//         int fd = *it;
-
-//         if (fd == excludeFd)
-//             continue;
-
-//         this->client.at(fd).getWriteBuf() += msg + "\r\n";
-//     }
-// }
+void Server::broadcastMsg(Channel& ch, Client &sender, const std::string &cmd,
+                          const std::string& msg, int excludeFd)
+{
+    const std::set<int> members = ch.getMembers();
+    for (std::set<int>::iterator it = members.begin();
+         it != members.end();
+         ++it)
+    {
+        int fd = *it;
+        if (fd == excludeFd)
+            continue;
+        this->sendGenericMsg(sender, this->client[*it], cmd, msg);
+    }
+}

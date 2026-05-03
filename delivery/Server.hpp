@@ -31,8 +31,8 @@ public:
     Channel& createChannel(const std::string &name);
     void removeChannel(const std::string &name);
 
-    // TO-DO
-    // void broadcastToChannel(Channel& ch, const std::string& msg, int excludeFd = -1)
+    void broadcastMsg(Channel& ch, Client &sender, const std::string &cmd,
+                      const std::string& msg, int excludeFd = -1);
 
 private:
     unsigned int port;

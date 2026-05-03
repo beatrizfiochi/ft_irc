@@ -19,6 +19,8 @@ int Command::execute(Server &server, Client &client) {
         ret = this->handleUser(server, client);
     else if (this->command == "PRIVMSG")
         ret = this->handlePrivMsg(server, client);
+    else if (this->command == "JOIN")
+        ret = this->handleJoin(server, client);
     else if (this->command == "KICK")
         ret = this->handleKick(server, client);
     else if (this->command == "INVITE")

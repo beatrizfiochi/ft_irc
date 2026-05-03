@@ -1,7 +1,7 @@
 #include "utils.hpp"
 #include <sstream>
 
-static std::vector<std::string> split(const std::string& str, char delimiter) {
+std::vector<std::string> split(const std::string& str, char delimiter) {
     std::vector<std::string> result;
     std::stringstream ss(str);
     std::string item;

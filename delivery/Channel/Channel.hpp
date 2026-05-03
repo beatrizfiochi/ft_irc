@@ -35,6 +35,7 @@ class Channel {
 
         bool isMember(int fd) const;
         bool isOperator(int fd) const;
+        bool isTopicRestricted() const;
 
         void setTopic(const std::string& topic);
         const std::string getTopic(void) const;

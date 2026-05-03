@@ -67,6 +67,10 @@ bool Channel::isOperator(int fd) const {
     return operators.find(fd) != operators.end();
 }
 
+bool Channel::isTopicRestricted() const {
+    return this->topicRestricted;
+}
+
 void Channel::setTopic(const std::string& topic) {
     this->topic = topic;
 }

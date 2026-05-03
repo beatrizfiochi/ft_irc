@@ -6,6 +6,7 @@
 LOG_REGISTER(Command_handler);
 
 int Command::handleUnknownCommand(Server &server, Client &client) {
+    LOG_ERR("Unknown command: " << this->getCmd());
     return server.sendReply(client.getFd(), 421, this->getCmd(), "Unknown command");
 }
 

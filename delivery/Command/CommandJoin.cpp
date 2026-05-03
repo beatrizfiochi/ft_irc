@@ -105,43 +105,38 @@ int Command::handleJoin(Server &server, Client &client)
             server.broadcastMsg(*ch, client, "JOIN " + channelName, "");
             // sendTopic(server, client, *ch);
             // sendNames(server, client, *ch);
-
             continue;
         }
 
-    //     // =========================================================
-    //     // CASO 2: canal já existe → validar regras
-    //     // =========================================================
+        // Channel already exists
+        // Check if it is already a member
+        if (ch->isMember(client.getFd())) {
+            // Silently ignore
+            continue;
+        }
 
-    //     if (ch->isUser(client))
-    //         continue;
+        //TODO: Implement the isInvited
+        if (ch->isInviteOnly() /* && !ch->isInvited(client) */) {
+            server.sendReply(client.getFd(), ERR_INVITEONLYCHAN,
+                            channelName, "Cannot join channel (+i)");
+            continue;
+        }
 
-    //     if (ch->isInviteOnly() && !ch->isInvited(client))
-    //     {
-    //         server.sendReply(client.getFd(), ERR_INVITEONLYCHAN,
-    //                         channelName, "Cannot join channel (+i)");
-    //         continue;
-    //     }
+        if (ch->hasKey() && !ch->checkKey(key)) {
+            server.sendReply(client.getFd(), ERR_BADCHANNELKEY,
+                            channelName, "Cannot join channel (+k)");
+            continue;
+        }
 
-    //     if (ch->hasKey() && ch->getKey() != key)
-    //     {
-    //         server.sendReply(client.getFd(), ERR_BADCHANNELKEY,
-    //                         channelName, "Bad channel key");
-    //         continue;
-    //     }
+        if (ch->isFull()) {
+            server.sendReply(client.getFd(), ERR_CHANNELISFULL,
+                            channelName, "Cannot join channel (+l)");
+            continue;
+        }
 
-    //     if (ch->isFull())
-    //     {
-    //         server.sendReply(client.getFd(), ERR_CHANNELISFULL,
-    //                         channelName, "Channel is full");
-    //         continue;
-    //     }
-
-    //     // 3.3 adicionar cliente
-    //     ch->addUser(&client);
-
-    //     // 3.4 broadcast + info
-    //     broadcastJoin(server, client, *ch);
+        // Add the user
+        ch->addClient(client.getFd());
+        server.broadcastMsg(*ch, client, "JOIN " + channelName, "");
     //     sendTopic(server, client, *ch);
     //     sendNames(server, client, *ch);
     }

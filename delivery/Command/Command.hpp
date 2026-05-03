@@ -19,6 +19,9 @@
 #define ERR_CHANOPRIVSNEEDED    482
 #define ERR_USERNOTINCHANNEL    441
 #define ERR_NOTDEFINED          999
+#define ERR_INVITEONLYCHAN      473 // "<channel> :Cannot join channel (+i)"
+#define ERR_BADCHANNELKEY       475 // "<channel> :Cannot join channel (+k)"
+#define ERR_CHANNELISFULL       471 // "<channel> :Cannot join channel (+l)"
 
 #define ERR_NOSUCHNICK  401 // "<nickname> :No such nick/channel"
 

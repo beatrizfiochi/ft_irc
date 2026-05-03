@@ -1,16 +1,23 @@
 #include "Channel.hpp"
+#include "../log.hpp"
+
+LOG_REGISTER(Channel);
 
 Channel::Channel(void)
         : name(""), topic(""),
         inviteOnly(false),
         topicRestricted(false),
-        key(""), userLimit(-1) {}
+        key(""), userLimit(-1) {
+    LOG_INF("Channel empty created");
+}
 
 Channel::Channel(const std::string &channelName)
         : name(channelName),
         topic(""), inviteOnly(false),
         topicRestricted(false),
-        key(""), userLimit(-1) {}
+        key(""), userLimit(-1) {
+    LOG_INF("Channel " << channelName << " created");
+}
 
 Channel::Channel(const Channel& other)
         : name(other.name), topic(other.topic),
@@ -71,4 +78,34 @@ const std::string Channel::getTopic(void) const {
 const std::set<int>& Channel::getMembers() const
 {
     return members;
+}
+
+bool Channel::isInviteOnly(void) const {
+    return this->inviteOnly;
+}
+
+void Channel::setInviteOnly(bool flag) {
+    this->inviteOnly = flag;
+}
+
+void Channel::setKey(std::string key) {
+    LOG_INF("Channel " << this->name << " changed");
+    LOG_DBG("Channel " << this->name << " key: " << key);
+    this->key = key;
+}
+
+bool Channel::checkKey(std::string key) {
+    return (this->key == key);
+}
+
+bool Channel::hasKey(void) const {
+    return (this->key != "");
+};
+
+bool Channel::isFull(void) const {
+    if (this->userLimit != -1)
+        if (this->members.size() >= static_cast<long unsigned int>(this->userLimit))
+            return true;
+    return false;
+
 }

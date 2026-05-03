@@ -16,7 +16,9 @@ class Channel {
 
         bool inviteOnly;
         bool topicRestricted;
-        std::string key; // password
+        // password
+        std::string key;
+        // Maxmimum number of members in the channel. -1 if disabled
         int userLimit;
 
     public:
@@ -38,6 +40,15 @@ class Channel {
         const std::string getTopic(void) const;
 
         const std::set<int>& getMembers() const;
+
+        bool isInviteOnly(void) const;
+        void setInviteOnly(bool flag);
+
+        void setKey(std::string key);
+        bool checkKey(std::string key);
+        bool hasKey(void) const;
+
+        bool isFull(void) const;
 };
 
 #endif // CHANNEL_HPP

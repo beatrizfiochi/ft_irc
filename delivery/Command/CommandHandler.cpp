@@ -1,5 +1,7 @@
 #include "Command.hpp"
 #include "../log.hpp"
+#include "../irc.hpp"
+#include "../utils/utils.hpp"
 
 LOG_REGISTER(Command_handler);
 
@@ -116,23 +118,35 @@ int Command::handlePrivMsg(Server &server, Client &client) {
         return server.sendReply(client.getFd(), ERR_NOTEXTTOSEND,
                                 "", "No text to send");
 
-    //TODO: Implement the split() function
-    // static std::vector<std::string> split(const std::string& str, char delimiter);
+    std::vector<std::string> targets = split(target_nick, ',');
     LOG_DBG("Sending msg to " + target_nick);
-    std::vector<std::string> targets(1, target_nick);
     for (size_t i = 0; i < targets.size(); i++) {
-        Client *target_client = server.getClient(targets[i]);
-        if (target_client == NULL){
-            LOG_DBG("Target not found: " + targets[i]);
-            return server.sendReply(client.getFd(), ERR_NOSUCHNICK,
-                                targets[i], "No such nick/channel");
-        }
-
-        LOG_DBG("Msg to : " + targets[i] + ": " + message);
-        int ret = server.sendPrivMsg(client, *target_client, message);
-        if (ret < 0) {
-            LOG_ERR("Sending msg on PRIVMSG returned error (" << ret << ")");
-            return ret;
+        if (targets[i].empty())
+            continue;
+        // Check if it is a channel or a user
+        if (isChannelName(targets[i])) {
+            Channel *ch = server.getChannel(targets[i]);
+            if (ch == NULL) {
+                server.sendReply(client.getFd(), ERR_NOSUCHNICK,
+                                        targets[i], "No such nick/channel");
+                continue;
+            }
+            server.broadcastMsg(*ch, client, "PRIVMSG " + ch->getName(),
+                                message, client.getFd());
+        } else {
+            Client *target_client = server.getClient(targets[i]);
+            if (target_client == NULL){
+                LOG_DBG("Target not found: " + targets[i]);
+                server.sendReply(client.getFd(), ERR_NOSUCHNICK,
+                                        targets[i], "No such nick/channel");
+                continue;
+            }
+            LOG_DBG("Msg to : " + targets[i] + ": " + message);
+            int ret = server.sendPrivMsg(client, *target_client, message);
+            if (ret < 0) {
+                LOG_ERR("Sending msg on PRIVMSG returned error (" << ret << ")");
+                return ret;
+            }
         }
     }
     return 0;

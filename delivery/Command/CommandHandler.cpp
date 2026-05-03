@@ -131,6 +131,12 @@ int Command::handlePrivMsg(Server &server, Client &client) {
                                         targets[i], "No such nick/channel");
                 continue;
             }
+            if (!ch->isMember(client.getFd())) {
+                server.sendReply(client.getFd(), ERR_CANNOTSENDTOCHAN,
+                                        targets[i], "Cannot send to channel");
+                continue;
+            }
+            LOG_DBG("Msg to channel : " + targets[i] + ": " + message);
             server.broadcastMsg(*ch, client, "PRIVMSG " + ch->getName(),
                                 message, client.getFd());
         } else {

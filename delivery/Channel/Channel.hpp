@@ -44,8 +44,8 @@ class Channel {
         bool isInviteOnly(void) const;
         void setInviteOnly(bool flag);
 
-        void setKey(std::string key);
-        bool checkKey(std::string key);
+        void setKey(const std::string &key);
+        bool checkKey(const std::string &key);
         bool hasKey(void) const;
 
         bool isFull(void) const;

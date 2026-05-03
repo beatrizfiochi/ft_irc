@@ -88,13 +88,13 @@ void Channel::setInviteOnly(bool flag) {
     this->inviteOnly = flag;
 }
 
-void Channel::setKey(std::string key) {
+void Channel::setKey(const std::string &key) {
     LOG_INF("Channel " << this->name << " changed");
     LOG_DBG("Channel " << this->name << " key: " << key);
     this->key = key;
 }
 
-bool Channel::checkKey(std::string key) {
+bool Channel::checkKey(const std::string &key) {
     return (this->key == key);
 }
 

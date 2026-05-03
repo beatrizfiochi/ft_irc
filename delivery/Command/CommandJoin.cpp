@@ -100,7 +100,8 @@ int Command::handleJoin(Server &server, Client &client)
         Channel* ch = server.getChannel(channelName);
         if (ch == NULL) {
             ch = &server.createChannel(channelName);
-
+            if (!key.empty())
+                 ch->setKey(key);
             ch->addClient(client.getFd());
             server.broadcastMsg(*ch, client, "JOIN " + channelName, "");
             // sendTopic(server, client, *ch);

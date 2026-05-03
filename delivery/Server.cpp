@@ -335,9 +335,14 @@ int Server::receiveData(int fd) {
                 break;
             } else {
                 // A real error occurred (e.g., ECONNRESET)
-                LOG_ERR("recv error on fd " << fd << ". errno = " << errno);
+                int ret = errno;
+                if (errno == ECONNRESET) {
+                    LOG_INF("Client " << fd << " disconnected");
+                    ret = 0;
+                } else
+                    LOG_ERR("recv error on fd " << fd << ". errno = " << errno);
                 this->disconnectClient(fd);
-                return EXIT_FAILURE;
+                return ret;
             }
         }
     }

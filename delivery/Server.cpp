@@ -383,6 +383,10 @@ void Server::removeClientFromChannels(int fd) {
         }
 }
 
+void Server::kickClient(int fd, Channel &ch) {
+    ch.removeClient(fd);
+}
+
 void Server::broadcastMsg(Channel& ch, Client &sender, const std::string &cmd,
                           const std::string& msg, int excludeFd)
 {

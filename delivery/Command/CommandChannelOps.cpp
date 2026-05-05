@@ -4,12 +4,17 @@
 // TODO entender o funcionamento do Log
 LOG_REGISTER(Command_ChannelOps);
 
+//       Command: KICK
+//    Parameters: <channel> <user> [<comment>]
+
 int Command::handleKick(Server& server, Client& client) {
+    // ERR_NEEDMOREPARAMS
     if (param.size() < 2){
         LOG_DBG("Not enough parameters");
         return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS, this->command, "Not enough parameters");
     }
-    // TODO: Verificar a existencia do canal (implementar no server)
+
+    // ERR_NOSUCHCHANNEL
     Channel *channel = server.getChannel(param[0]);
     if (channel == NULL){
        LOG_DBG("No such channel: " + param[0]);
@@ -19,81 +24,116 @@ int Command::handleKick(Server& server, Client& client) {
                                  "No such channel");
     }
 
-    // TODO verificar a existencia do cliente (implementar no channel)
-    Client* target = server.getClient(param[1]);
-    if (!target) {
-        return server.sendReply(client.getFd(), ERR_USERNOTINCHANNEL, param[1], "They aren't on that channel");
+    Client *target = server.getClient(param[1]);
+    // ERR_NOTONCHANNEL
+    if (target == NULL) {
+        LOG_DBG("No such nick/channel");
+        return server.sendReply(target->getFd(), ERR_NOSUCHNICK, this->command, "No such nick/channel");
     }
 
-    //TODO Verificar se cliente eh operador do canal (implementar no channel)
+    // ERR_CHANOPRIVSNEEDED
     if (!channel->isOperator(client.getFd())){
         LOG_DBG("User is not channel operator");
         return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED, param[0], "You're not channel operator");
     }
 
-    //  TODO o metodo no servidor que kicka o client. Ver ser o canal vai ficar vazio e/ou
-    //  se o canal nao vai ter mais operador (implementar no server)
-    //  if (param.size() > 2)
-    //      return server.kickClient(client, param[0], param[1], param[2]);
-    //  else
-    //      return server.kickClient(client, param[0], param[1], "");
+    // ERR_USERNOTINCHANNEL
+    if (!channel->isMember(target->getFd())) {
+        LOG_DBG("They aren't on that channel");
+        return server.sendReply(client.getFd(), ERR_USERNOTINCHANNEL, param[1] + " " + param[0], "They aren't on that channel");
+    }
+
+    std::string reason = "";
+    if (param.size() > 2)
+        reason = param[2];
+    LOG_DBG("Kicking User " + param[1] + " out of channel");
+    server.broadcastMsg(*channel, client, "KICK " + channel->getName(),
+    reason, client.getFd());
+    server.kickClient(target->getFd(), *channel);
     return 0;
 }
 
-int Command::handleInvite(Server& server, Client& client) {
+//      Command: INVITE
+//    Parameters: <nickname> <channel>
 
+int Command::handleInvite(Server& server, Client& client) {
+    // ERR_NEEDMOREPARAMS
     if (param.size() < 2){
         LOG_DBG("Not enough parameters");
         return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS, this->command, "Not enough parameters");
     }
 
-    // TODO implementar no servidor o getChannel os metodos bool de InviteOnly e isOperator no Channel
-    Channel *channel = server.getChannel(param[0]);
-    if (channel && channel->isInviteOnly() && !channel->isOperator(client.getFd())) {
-        LOG_DBG("It needs a channel operator");
-        return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED, param[0], "It needs a channel operator");
+    // ERR_NOSCHNICK
+    Client *target = server.getClient(param[0]);
+    if (!target) {
+        LOG_DBG("No such nick/channel");
+        return server.sendReply(client.getFd(), ERR_NOSUCHNICK, this->command, "No such nick/channel");
     }
 
-    // TODO implementar no servidor o getClient e o inviteClientToChannel
-    Client *target = server.getClient(param[1]);
-    (void) target;
-    //server.inviteClientToChannel(target, param[0]);
+    // There is no requirement that the channel the target user is being invited to
+    // must exist or be a valid channel ( o RFC nao diz o que fazer nesse caso)
+    // ERR_NOSUCHCHANNEL (coloquei para evitar segfault do adding do client ao channel = NULL)
+    Channel *channel = server.getChannel(param[1]);
+    if (channel == NULL) {
+        LOG_DBG("No such channel");
+        return server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL, param[1], "No such channel");
+    }
+    // ERR_CHANOPRIVSNEEDED
+    if (channel->isInviteOnly() && !channel->isOperator(client.getFd())) {
+        LOG_DBG("It needs a channel operator");
+        return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED, param[1], "It needs a channel operator");
+    }
 
-    // envia INVITE pro target (essa linha esta incorreta)
-    // server.sendMessage(*target, ":" + client.getNick() + " INVITE " + targetNick + " " + channelName);
-    // server.sendMessage(client, "341 " + client.getNick() + " " + param[1] + " " + param[0]);
+    channel->inviteClient(target->getFd());
+    //channel->addClient(target->getFd());
+    LOG_DBG("Adding User " + param[0] + " to channel " + param[1]);
+    server.sendReply(client.getFd(), RPL_INVITING, param[0] + " " + channel->getName(), "");
     return 0;
 }
-
-//    A channel operator is identified by the '@' symbol next to their
-//    nickname whenever it is associated with a channel
 
 //    Command: TOPIC
 //    Parameters: <channel> [<topic>]
 
 int Command::handleTopic(Server &server, Client &client) {
+    // ERR_NEEDMOREPARAMS
     if (param.size() < 1){
         LOG_DBG("Not enough parameters");
         return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS, this->command, "Not enough parameters");
     }
+
+    // ERR_NOSUCHCHANNEL
     Channel *channel = server.getChannel(param[0]);
     if (channel == NULL) {
         LOG_DBG("No such channel: " + param[0]);
         return server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL, param[0], "No such channel");
     }
-    if (param.size() == 1) {
-        if (channel->getTopic().empty())
-            return server.sendReply(client.getFd(), RPL_NOTOPIC, this->command, "No topic is set");
-        return server.sendReply(client.getFd(), RPL_TOPIC, channel->getName(), channel->getTopic());
+
+    // ERR_NOTONCHANNEL
+    if (!channel->isMember(client.getFd())) {
+        LOG_DBG("They aren't on that channel");
+        return server.sendReply(client.getFd(), ERR_NOTONCHANNEL, param[0], "They aren't on that channel");
     }
-    // TODO
-    if (channel->isTopicRestricted() && !channel->isOperator(client.getFd())) {
-        LOG_DBG("It needs a channel operator");
-        return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED, this->command, "It needs a channel operator");
+
+    // ERR_CHANOPRIVSNEEDED
+    if (param.size() > 1) {
+        if (channel->isTopicRestricted() && !channel->isOperator(client.getFd())) {
+            LOG_DBG("It needs a channel operator");
+            return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED, param[0], "It needs a channel operator");
+        }
+    }
+
+    if (param.size() == 1) {
+        if (channel->getTopic().empty()) {
+            LOG_DBG("No topic is set");
+            return server.sendReply(client.getFd(), RPL_NOTOPIC, param[0], "No topic is set");
+        }
+        server.sendReply(client.getFd(), RPL_TOPIC, channel->getName(), channel->getTopic());
+        return 0;
     }
     // topic for channel will be changed
     channel->setTopic(param[1]);
-    return server.sendReply(client.getFd(), RPL_TOPIC, channel->getName(), channel->getTopic());
+    server.broadcastMsg(*channel, client, "TOPIC " + channel->getName(), channel->getTopic(), client.getFd());
+    return 0;
 }
 
 //  Parameters: <channel> {[+|-]|o|p|s|i|t|n|b|v} [<limit>] [<user>]

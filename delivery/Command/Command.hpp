@@ -19,6 +19,7 @@
 #define ERR_NOSUCHCHANNEL       403 // "<channel name> :No such channel"
 #define ERR_CHANOPRIVSNEEDED    482 // "<channel> :You're not channel operator"
 #define ERR_USERNOTINCHANNEL    441 // "<nick> <channel> :They aren't on that channel"
+#define ERR_NOTONCHANNEL        442 // "<channel> :You're not on that channel"
 #define ERR_UMODEUNKNOWNFLAG    501 // ":Unknown MODE flag"
 #define ERR_UNKNOWNMODE         472 // "<char> :is unknown mode char to me"
 #define ERR_NOTDEFINED          999

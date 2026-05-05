@@ -30,6 +30,7 @@ public:
     Channel* getChannel(const std::string &name);
     Channel& createChannel(const std::string &name);
     void removeChannel(const std::string &name);
+    void kickClient(int fd, Channel &ch);
 
     void broadcastMsg(Channel& ch, Client &sender, const std::string &cmd,
                       const std::string& msg, int excludeFd = -1);
@@ -54,7 +55,6 @@ private:
     void connectClient(int fd);
     void disconnectClient(int fd);
     void processBufferedMessages(int fd);
-
 
     void removeClientFromChannels(int fd);
 };

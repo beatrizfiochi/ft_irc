@@ -7,7 +7,8 @@ Channel::Channel(void)
         : name(""), topic(""),
         inviteOnly(false),
         topicRestricted(false),
-        key(""), userLimit(-1) {
+        key(""), userLimit(-1),
+        modeList("") {
     LOG_INF("Channel empty created");
 }
 
@@ -15,7 +16,8 @@ Channel::Channel(const std::string &channelName)
         : name(channelName),
         topic(""), inviteOnly(false),
         topicRestricted(false),
-        key(""), userLimit(-1) {
+        key(""), userLimit(-1),
+        modeList("") {
     LOG_INF("Channel " << channelName << " created");
 }
 
@@ -24,7 +26,9 @@ Channel::Channel(const Channel& other)
         members(other.members), operators(other.operators),
         inviteOnly(other.inviteOnly),
         topicRestricted(other.topicRestricted),
-        key(other.key), userLimit(other.userLimit) {}
+        key(other.key), userLimit(other.userLimit),
+        modeList(other.modeList),
+        invitedClients(other.invitedClients) {}
 
 Channel& Channel::operator=(const Channel& other) {
     if (this != &other) {
@@ -36,6 +40,8 @@ Channel& Channel::operator=(const Channel& other) {
         this->topicRestricted = other.topicRestricted;
         this->key = other.key;
         this->userLimit = other.userLimit;
+        this->modeList = other.modeList;
+        this->invitedClients = other.invitedClients;
     }
     return *this;
 }
@@ -90,6 +96,18 @@ bool Channel::isInviteOnly(void) const {
 
 void Channel::setInviteOnly(bool flag) {
     this->inviteOnly = flag;
+}
+
+void Channel::inviteClient(int fd) {
+    invitedClients.insert(fd);
+}
+
+void Channel::removeInvite(int fd) {
+    invitedClients.erase(fd);
+}
+
+bool Channel::isClientInvited(int fd) {
+    return invitedClients.count(fd) > 0;
 }
 
 void Channel::setKey(const std::string &key) {

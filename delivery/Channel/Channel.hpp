@@ -20,6 +20,10 @@ class Channel {
         std::string key;
         // Maxmimum number of members in the channel. -1 if disabled
         int userLimit;
+        // modes
+        std::string modeList;
+        // invite
+        std::set<int> invitedClients;
 
     public:
         Channel(void); // default constructor
@@ -44,6 +48,10 @@ class Channel {
 
         bool isInviteOnly(void) const;
         void setInviteOnly(bool flag);
+
+        void inviteClient(int fd);
+        void removeInvite(int fd);
+        bool isClientInvited(int fd);
 
         void setKey(const std::string &key);
         bool checkKey(const std::string &key);

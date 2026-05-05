@@ -88,6 +88,7 @@ int Command::handleInvite(Server& server, Client& client) {
     //channel->addClient(target->getFd());
     LOG_DBG("Adding User " + param[0] + " to channel " + param[1]);
     server.sendReply(client.getFd(), RPL_INVITING, param[0] + " " + channel->getName(), "");
+    server.sendGenericMsg(client, *target, "INVITE " + target->getNick() + " " + channel->getName(), "");
     return 0;
 }
 

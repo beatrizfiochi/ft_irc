@@ -1,5 +1,7 @@
 #include "Command.hpp"
+#include "../Channel/Channel.hpp"
 #include "../log.hpp"
+#include <cstdlib>
 
 // TODO entender o funcionamento do Log
 LOG_REGISTER(Command_ChannelOps);
@@ -159,17 +161,24 @@ int Command::handleMode(Server &server, Client &client) {
         return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS, this->command, "Not enough parameters");
     }
     Channel *channel = server.getChannel(param[0]);
-    if (channel == NULL){
+    if (channel == NULL) {
         LOG_DBG("No such channel: " + param[0]);
         return server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL, param[0], "No such channel");
     }
 
-    if (param[1].empty()) {
-        LOG_DBG("Unknown MODE flag");
-        return server.sendReply(client.getFd(), ERR_UMODEUNKNOWNFLAG, this->command, "Unknown MODE flag" );
+    if (!channel->isOperator(client.getFd())) {
+        LOG_DBG("It needs a channel operator");
+        return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED, param[0], "It needs a channel operator");
     }
 
-    //  Aqui eu tenho uma duvida conceitual: verifico toda a linha antes?
+    // TODO quando a lista de MODEs esta sem parametro, temos de replay a que esta la
+    if (param[1].empty()) {
+        LOG_DBG("Unknown MODE flag");
+        return server.sendReply(client.getFd(), ERR_UMODEUNKNOWNFLAG, "", "Unknown MODE flag" );
+    }
+
+    // TODO a lista de modes precisa ser atualizada, mas tambem precisa de um getter inicial
+    // tenho que pensar a logica (mode nao guarda '-' e nao repete o que ja existe)
     std::string modes = param[1];
     size_t argIndex = 2;
     char sign = '+';
@@ -179,39 +188,93 @@ int Command::handleMode(Server &server, Client &client) {
             sign = c;
             continue;
         }
+        if (c == ' ') { continue; }
 
         std::string arg;
         if (c == 'o' || ((c == 'k' || c == 'l') && sign == '+')) {
             if (argIndex >= param.size()) {
-                return server.sendReply(client.getFd(), ERR_UMODEUNKNOWNFLAG, this->command, "Unknown MODE flag" );
+                LOG_DBG("Not enough parameters");
+                return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS, this->command, "Not enough parameters");
             }
             arg = param[argIndex++];
         }
 
-        // TODO implementar as funcoes de enable e disable / add e remove
-        // if (c == 'i') {
-        //     if (sign == '+') enableInviteOnly();
-        //     else disableInviteOnly();
-        // }
-        // else if (c == 't') {
-        //     if (sign == '+') enableTopicRestricted();
-        //     else disableTopicRestricted();
-        // }
-        // else if (c == 'o') {
-        //     if (sign == '+') addOperator(arg);
-        //     else removeOperator(arg);
-        // }
-        // else if (c == 'k') {
-        //     if (sign == '+') setKey(arg);
-        //     else removeKey();
-        // }
-        // else if (c == 'l') {
-        //     if (sign == '+') setLimit(std::atoi(arg.c_str()));
-        //     else removeLimit();
-        // }
-        // else {
-        //     std::cerr << "Modo inválido: " << c << std::endl;
-        // }
+        switch (c) {
+        case 'i': {
+            if (sign == '+')
+                channel->enableInviteOnly();
+            else
+                channel->disableInviteOnly();
+            break;
+        }
+
+        case 't': {
+            if (sign == '+')
+                channel->enableTopicRestricted();
+            else
+                channel->disableTopicRestricted();
+            break;
+        }
+
+        case 'o': {
+        // aqui so estou obtendo um ponteiro, nao estou criando um objeto
+            Client *target = server.getClient(arg);
+            // ERR_NOSUCHNICK
+            if (target == NULL) {
+                LOG_DBG("No such nick/channel");
+                return server.sendReply(client.getFd(), ERR_NOSUCHNICK, arg, "No such nick/channel");
+            }
+            int targetFd = target->getFd();
+            if (targetFd == -1) {
+                LOG_DBG("Unknown MODE flag");
+                return server.sendReply(client.getFd(), ERR_UMODEUNKNOWNFLAG, "MODE", "Unknown MODE flag" );
+            }
+            // pra ser um operador ja tem de ser membro do canal?
+            if (!channel->isMember(targetFd)) {
+                LOG_DBG("User not in channel: " + param[1]);
+                return server.sendReply(client.getFd(), ERR_USERNOTINCHANNEL, param[1] + " " + param[0], "They aren't on that channel");
+            }
+            if (sign == '+') {
+                if (!channel->isOperator(targetFd)) {
+                    channel->addOperator(targetFd);
+                }
+            }
+            else {
+                if (channel->isOperator(targetFd)) {
+                    channel->removeOperator(targetFd);
+                }
+            }
+            break;
+        }
+
+        case 'k': {
+            if (sign == '+')
+                channel->setPass(arg);
+            else
+                channel->removePass();
+            break;
+        }
+
+        case 'l': {
+            if (sign == '+') {
+                char* end;
+                long value = std::strtol(arg.c_str(), &end, 10);
+                if ((*end != '\0') || value <= 0 || value > INT_MAX){
+                    LOG_DBG("Invalid limit string: " + arg);
+                    server.sendReply(client.getFd(), ERR_UNKNOWNMODE, std::string(1, c) ,"Invalid limit string: " + arg);
+                }
+                else
+                    channel->setLimit(value);
+            }
+            else
+                channel->removeLimit();
+            break;
+        }
+
+        default:
+            LOG_DBG("is unknown mode char to me");
+            return server.sendReply(client.getFd(), ERR_UNKNOWNMODE, std::string(1, c) ,"is unknown mode char to me");
+        }
     }
     return 0;
 }

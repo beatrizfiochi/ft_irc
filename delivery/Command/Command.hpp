@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <climits>
 #include "../Client/Client.hpp"
 #include "../Server.hpp"
 

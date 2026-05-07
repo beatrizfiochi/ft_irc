@@ -58,6 +58,18 @@ class Channel {
         bool hasKey(void) const;
 
         bool isFull(void) const;
-};
+
+        void enableInviteOnly();
+        void disableInviteOnly();
+        void enableTopicRestricted();
+        void disableTopicRestricted();
+        void addOperator(int fd);
+        void removeOperator(int fd);
+        void setPass(const std::string &key);
+        void removePass();
+        void setLimit(long value);
+        void removeLimit();
+        const std::string getModeList(void) const;
+    };
 
 #endif // CHANNEL_HPP

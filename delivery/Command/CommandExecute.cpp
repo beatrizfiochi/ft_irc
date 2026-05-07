@@ -25,6 +25,10 @@ int Command::execute(Server &server, Client &client) {
         ret = this->handleKick(server, client);
     else if (this->command == "INVITE")
         ret = this->handleInvite(server, client);
+    else if (this->command == "TOPIC")
+        ret = this->handleTopic(server, client);
+    else if (this->command == "MODE")
+        ret = this->handleMode(server, client);
     else
         ret = this->handleUnknownCommand(server, client);
 

@@ -15,6 +15,7 @@ SRCS = $(SRCS_DIR)/main.cpp \
 	$(SRCS_DIR)/irc.cpp \
 	$(SRCS_DIR)/Client/Client.cpp \
 	$(SRCS_DIR)/Channel/Channel.cpp \
+	$(SRCS_DIR)/Channel/ChannelModes.cpp \
 
 OBJS_DIR = objs
 OBJS = $(patsubst %.cpp,$(OBJS_DIR)/%.o,$(SRCS))

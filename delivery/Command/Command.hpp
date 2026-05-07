@@ -23,20 +23,19 @@
 #define ERR_NOTONCHANNEL        442 // "<channel> :You're not on that channel"
 #define ERR_UMODEUNKNOWNFLAG    501 // ":Unknown MODE flag"
 #define ERR_UNKNOWNMODE         472 // "<char> :is unknown mode char to me"
-#define ERR_NOTDEFINED          999
+#define ERR_UNKNOWNCOMMAND      421 // "<command> :Unknown command"
 #define ERR_INVITEONLYCHAN      473 // "<channel> :Cannot join channel (+i)"
 #define ERR_BADCHANNELKEY       475 // "<channel> :Cannot join channel (+k)"
 #define ERR_CHANNELISFULL       471 // "<channel> :Cannot join channel (+l)"
 #define ERR_CANNOTSENDTOCHAN    404 // "<channel name> :Cannot send to channel"
 
-#define RPL_MOTDSTART   375 // ":- <server> Message of the day - "
-#define RPL_MOTD        372 // ":- <text>"
-#define RPL_ENDOFMOTD   376 // ":End of /MOTD command"
-#define RPL_INVITING    341 // "<channel> <nick>"
-#define RPL_NOTOPIC     331 // "<channel> :No topic is set"
-#define RPL_TOPIC       332 // "<channel> :<topic>"
-
-// 324     RPL_CHANNELMODEIS "<channel> <mode> <mode params>" ??????
+#define RPL_MOTDSTART       375 // ":- <server> Message of the day - "
+#define RPL_MOTD            372 // ":- <text>"
+#define RPL_ENDOFMOTD       376 // ":End of /MOTD command"
+#define RPL_INVITING        341 // "<channel> <nick>"
+#define RPL_NOTOPIC         331 // "<channel> :No topic is set"
+#define RPL_TOPIC           332 // "<channel> :<topic>"
+#define RPL_CHANNELMODEIS   324 // "<channel> <mode> <mode params>"
 
 class Command {
 public:

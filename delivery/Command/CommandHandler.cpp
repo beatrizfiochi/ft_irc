@@ -91,7 +91,7 @@ int Command::handleMOTD(Server &server, Client &client) {
 
 int Command::handleQuit(const std::vector<std::string> &args) {
     (void)args;
-// TODO
+// TODO tem de implementar QUIT
 // A sugestao eh que o Server execute esse comando
 // reason seria uma mensagem montada, tipo
 // std::string reason = "Tchau ..."

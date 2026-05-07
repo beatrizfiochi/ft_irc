@@ -32,8 +32,6 @@ void Channel::removePass() {
     this->setKey("");
 }
 
-
-// TODO verificar o >0 e <MAX_INT
 void Channel::setLimit(long value) {
     userLimit = static_cast<int>(value);
 }

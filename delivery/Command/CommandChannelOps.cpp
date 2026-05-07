@@ -155,11 +155,25 @@ int Command::handleTopic(Server &server, Client &client) {
 //            l - set the user limit to channel;
 //            k - set a channel key (password).
 
+//  When parsing MODE messages, it is recommended that the entire message
+//  be parsed first and then the changes which resulted then passed on.
+
+struct temporaryMode {
+    char sign;
+    char mode;
+    std::string arg;
+    long limitValue;
+
+    temporaryMode(char s, char m, const std::string &a)
+        : sign(s), mode(m), arg(a), limitValue(0) {}
+};
+
 int Command::handleMode(Server &server, Client &client) {
-    if (param.size() < 2) {
+    if (param.size() < 1) {
         LOG_DBG("Not enough parameters");
         return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS, this->command, "Not enough parameters");
     }
+
     Channel *channel = server.getChannel(param[0]);
     if (channel == NULL) {
         LOG_DBG("No such channel: " + param[0]);
@@ -171,26 +185,33 @@ int Command::handleMode(Server &server, Client &client) {
         return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED, param[0], "It needs a channel operator");
     }
 
-    // TODO quando a lista de MODEs esta sem parametro, temos de replay a que esta la
-    if (param[1].empty()) {
-        LOG_DBG("Unknown MODE flag");
-        return server.sendReply(client.getFd(), ERR_UMODEUNKNOWNFLAG, "", "Unknown MODE flag" );
+    if (param.size() == 1) {
+        LOG_DBG("Display MODEs");
+        return server.sendReply(client.getFd(), RPL_CHANNELMODEIS, channel->getName() + " +" + channel->getModeList(), "");
     }
 
-    // TODO a lista de modes precisa ser atualizada, mas tambem precisa de um getter inicial
-    // tenho que pensar a logica (mode nao guarda '-' e nao repete o que ja existe)
+// -------------------------------------------------------------------------------------------------------------------
+
     std::string modes = param[1];
     size_t argIndex = 2;
     char sign = '+';
-    for (size_t i = 0; i < modes.size(); i++) {
+    std::vector<temporaryMode> changes;
+    for (size_t i = 0; i < modes.size(); ++i)
+    {
         char c = modes[i];
-        if (c == '+' || c == '-') {
+        if (c == '+' || c == '-'){
             sign = c;
             continue;
         }
-        if (c == ' ') { continue; }
 
+        if (c != 'i' && c != 't' && c != 'o' && c != 'k' && c != 'l') {
+            LOG_DBG("Unknown mode");
+            return server.sendReply(client.getFd(), ERR_UNKNOWNMODE, std::string(1, c), "is unknown mode char to me");
+        }
+
+        // modes que precisam argumento
         std::string arg;
+        long value = 0;
         if (c == 'o' || ((c == 'k' || c == 'l') && sign == '+')) {
             if (argIndex >= param.size()) {
                 LOG_DBG("Not enough parameters");
@@ -199,25 +220,7 @@ int Command::handleMode(Server &server, Client &client) {
             arg = param[argIndex++];
         }
 
-        switch (c) {
-        case 'i': {
-            if (sign == '+')
-                channel->enableInviteOnly();
-            else
-                channel->disableInviteOnly();
-            break;
-        }
-
-        case 't': {
-            if (sign == '+')
-                channel->enableTopicRestricted();
-            else
-                channel->disableTopicRestricted();
-            break;
-        }
-
-        case 'o': {
-        // aqui so estou obtendo um ponteiro, nao estou criando um objeto
+        if (c == 'o') {
             Client *target = server.getClient(arg);
             // ERR_NOSUCHNICK
             if (target == NULL) {
@@ -225,55 +228,77 @@ int Command::handleMode(Server &server, Client &client) {
                 return server.sendReply(client.getFd(), ERR_NOSUCHNICK, arg, "No such nick/channel");
             }
             int targetFd = target->getFd();
-            if (targetFd == -1) {
-                LOG_DBG("Unknown MODE flag");
-                return server.sendReply(client.getFd(), ERR_UMODEUNKNOWNFLAG, "MODE", "Unknown MODE flag" );
-            }
-            // pra ser um operador ja tem de ser membro do canal?
             if (!channel->isMember(targetFd)) {
-                LOG_DBG("User not in channel: " + param[1]);
-                return server.sendReply(client.getFd(), ERR_USERNOTINCHANNEL, param[1] + " " + param[0], "They aren't on that channel");
+                LOG_DBG("User not in channel: " + arg);
+                return server.sendReply(client.getFd(), ERR_USERNOTINCHANNEL, arg + " " + param[0], "They aren't on that channel");
             }
-            if (sign == '+') {
-                if (!channel->isOperator(targetFd)) {
-                    channel->addOperator(targetFd);
-                }
-            }
-            else {
-                if (channel->isOperator(targetFd)) {
-                    channel->removeOperator(targetFd);
-                }
-            }
-            break;
         }
 
-        case 'k': {
-            if (sign == '+')
-                channel->setPass(arg);
-            else
-                channel->removePass();
-            break;
+        if (c == 'l' && sign == '+') {
+            char* end;
+            value = std::strtol(arg.c_str(), &end, 10);
+            if ((*end != '\0') || value <= 0 || value > INT_MAX){
+                LOG_DBG("Invalid limit string: " + arg);
+                return server.sendReply(client.getFd(), ERR_UNKNOWNMODE, std::string(1, c) ,"Invalid limit string: " + arg);
+            }
         }
+        temporaryMode change(sign, c, arg);
+        change.limitValue = value;
+        changes.push_back(change);
+    }
 
-        case 'l': {
-            if (sign == '+') {
-                char* end;
-                long value = std::strtol(arg.c_str(), &end, 10);
-                if ((*end != '\0') || value <= 0 || value > INT_MAX){
-                    LOG_DBG("Invalid limit string: " + arg);
-                    server.sendReply(client.getFd(), ERR_UNKNOWNMODE, std::string(1, c) ,"Invalid limit string: " + arg);
+    // --------------------------------------------------------------------------------------------------------------------
+
+    for (size_t i = 0; i < changes.size(); ++i)
+    {
+        temporaryMode &change = changes[i];
+
+        switch (change.mode)
+        {
+            case 'i': {
+                if (change.sign == '+')
+                    channel->enableInviteOnly();
+                else
+                    channel->disableInviteOnly();
+                break;
+            }
+            case 't': {
+                if (change.sign == '+')
+                    channel->enableTopicRestricted();
+                else
+                    channel->disableTopicRestricted();
+                break;
+            }
+            case 'k': {
+                if (change.sign == '+')
+                    channel->setPass(change.arg);
+                else
+                    channel->removePass();
+                break;
+            }
+            case 'o': {
+                Client *target = server.getClient(change.arg);
+                int targetFd = target->getFd();
+                if (change.sign == '+') {
+                    if (!channel->isOperator(targetFd)) {
+                        channel->addOperator(targetFd);
+                    }
+                }
+                else {
+                    if (channel->isOperator(targetFd)) {
+                        channel->removeOperator(targetFd);
+                    }
+                }
+                break;
+            }
+            case 'l' : {
+                if (change.sign == '+') {
+                    channel->setLimit(change.limitValue);
                 }
                 else
-                    channel->setLimit(value);
+                    channel->removeLimit();
+                break;
             }
-            else
-                channel->removeLimit();
-            break;
-        }
-
-        default:
-            LOG_DBG("is unknown mode char to me");
-            return server.sendReply(client.getFd(), ERR_UNKNOWNMODE, std::string(1, c) ,"is unknown mode char to me");
         }
     }
     return 0;

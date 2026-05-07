@@ -87,13 +87,13 @@ int Command::handleMOTD(Server &server, Client &client) {
 
     ret = server.sendReply(client.getFd(), RPL_MOTDSTART,
                             "", "- " + server.getHostname() + " Message of the day -");
-    if (ret > 0) {
-        ret += server.sendReply(client.getFd(), RPL_MOTD,
+    if (ret == 0) {
+        ret = server.sendReply(client.getFd(), RPL_MOTD,
                             "", "- Hello!! Funcionou?");
     }
 
-    if (ret > 0) {
-        ret += server.sendReply(client.getFd(), RPL_ENDOFMOTD,
+    if (ret == 0) {
+        ret = server.sendReply(client.getFd(), RPL_ENDOFMOTD,
                             "", "End of /MOTD command");
     }
     return ret;

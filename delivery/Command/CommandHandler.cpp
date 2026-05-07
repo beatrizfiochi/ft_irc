@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include "Command.hpp"
 #include "../log.hpp"
 #include "../irc.hpp"
@@ -69,6 +70,11 @@ int Command::handleUser(Server &server, Client &client) {
     client.setReal(this->param[3]);
     if (client.getPassFlag() && (client.getNick() != "*"))
         client.setRegister(true);
+    else {
+        LOG_ERR("Registration failed. Pass flag: " << client.getPassFlag() << ", Nick: " << client.getNick());
+        server.disconnectClient(client.getFd());
+        return EXIT_FAILURE;
+    }
 
     return Command::handleMOTD(server, client);
 }

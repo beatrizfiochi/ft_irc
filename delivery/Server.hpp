@@ -25,6 +25,7 @@ public:
     std::string getHostname(void) const;
     void addClientToNickList(Client &c, const std::string &oldname);
     Client *getClient(const std::string &nick);
+    void disconnectClient(int fd);
 
     // Channel integration
     Channel* getChannel(const std::string &name);
@@ -53,7 +54,6 @@ private:
     int flushReplyBuffer(int fd);
     int setWriteInterest(int fd, bool enabled);
     void connectClient(int fd);
-    void disconnectClient(int fd);
     void processBufferedMessages(int fd);
 
     void removeClientFromChannels(int fd);

@@ -49,6 +49,12 @@ int Command::handleNick(Server &server, Client &client) {
         return server.sendReply(client.getFd(), ERR_NICKNAMEINUSE,
                                 newNick, "Nickname is already in use");
 
+    if (client.isRegistered()) {
+        std::set<int> recipients = server.getCommonChannelFds(client.getFd());
+        recipients.insert(client.getFd());
+        server.broadcastTo(recipients, client, "NICK", newNick);
+    }
+
     std::string old = client.getNick();
     client.setNick(newNick);
     server.addClientToNickList(client, old);

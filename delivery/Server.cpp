@@ -395,14 +395,40 @@ void Server::kickClient(int fd, Channel &ch) {
 void Server::broadcastMsg(Channel& ch, Client &sender, const std::string &cmd,
                           const std::string& msg, int excludeFd)
 {
-    const std::set<int> members = ch.getMembers();
-    for (std::set<int>::iterator it = members.begin();
-         it != members.end();
+    this->broadcastTo(ch.getMembers(), sender, cmd, msg, excludeFd);
+}
+
+void Server::broadcastTo(const std::set<int> &fds, Client &sender,
+                         const std::string &cmd, const std::string &msg,
+                         int excludeFd)
+{
+    // Snapshot the recipient set so a mid-loop disconnect (which can erase
+    // entries from the caller's underlying set, e.g. a Channel::members)
+    // cannot invalidate our iterator.
+    std::set<int> snapshot(fds);
+    for (std::set<int>::iterator it = snapshot.begin();
+         it != snapshot.end();
          ++it)
     {
         int fd = *it;
         if (fd == excludeFd)
             continue;
-        this->sendGenericMsg(sender, this->client[*it], cmd, msg);
+        std::map<int, Client>::iterator ci = this->client.find(fd);
+        if (ci == this->client.end())
+            continue;
+        this->sendGenericMsg(sender, ci->second, cmd, msg);
     }
+}
+
+std::set<int> Server::getCommonChannelFds(int fd) const {
+    std::set<int> result;
+    for (std::map<std::string, Channel>::const_iterator i = this->channels.begin();
+         i != this->channels.end(); ++i)
+    {
+        if (!i->second.isMember(fd))
+            continue;
+        const std::set<int>& members = i->second.getMembers();
+        result.insert(members.begin(), members.end());
+    }
+    return result;
 }

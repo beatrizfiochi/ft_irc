@@ -2,6 +2,7 @@
 #define _SERVER_HPP_
 
 #include <map>
+#include <set>
 #include <string>
 #include "Client/Client.hpp"
 #include "Channel/Channel.hpp"
@@ -35,6 +36,10 @@ public:
 
     void broadcastMsg(Channel& ch, Client &sender, const std::string &cmd,
                       const std::string& msg, int excludeFd = -1);
+    void broadcastTo(const std::set<int> &fds, Client &sender,
+                     const std::string &cmd, const std::string &msg,
+                     int excludeFd = -1);
+    std::set<int> getCommonChannelFds(int fd) const;
 
 private:
     unsigned int port;

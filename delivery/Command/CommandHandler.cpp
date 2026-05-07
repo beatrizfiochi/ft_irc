@@ -42,9 +42,12 @@ int Command::handleNick(Server &server, Client &client) {
         return server.sendReply(client.getFd(), ERR_ERRONEUSNICKNAME,
                                 newNick, "Erroneus nickname");
 
-    // TODO   **  Nicks list **
-    //  if (server.nickExists(newNick))
-    //      return ERR_NICKCOLLISION;
+    if (newNick == client.getNick())
+        return 0;
+
+    if (server.getClient(newNick) != NULL)
+        return server.sendReply(client.getFd(), ERR_NICKNAMEINUSE,
+                                newNick, "Nickname is already in use");
 
     std::string old = client.getNick();
     client.setNick(newNick);

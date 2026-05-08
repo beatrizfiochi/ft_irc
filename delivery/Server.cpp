@@ -400,32 +400,43 @@ void Server::kickClient(int fd, Channel &ch) {
     ch.removeClient(fd);
 }
 
-void Server::broadcastMsg(Channel& ch, Client &sender, const std::string &cmd,
-                          const std::string& msg, int excludeFd)
+int Server::broadcastMsg(Channel& ch, Client &sender, const std::string &cmd,
+                         const std::string& msg, int excludeFd)
 {
-    this->broadcastTo(ch.getMembers(), sender, cmd, msg, excludeFd);
+    // if the caller didn't explicitly exclude
+    // sender, sender gets the echo (e.g. JOIN echoes to the joiner).
+    bool echo = (excludeFd != sender.getFd());
+    return this->broadcastTo(ch.getMembers(), sender, cmd, msg, excludeFd, echo);
 }
 
-void Server::broadcastTo(const std::set<int> &fds, Client &sender,
-                         const std::string &cmd, const std::string &msg,
-                         int excludeFd)
+int Server::broadcastTo(const std::set<int> &fds, Client &sender,
+                        const std::string &cmd, const std::string &msg,
+                        int excludeFd, bool echoToSender)
 {
     // Snapshot the recipient set so a mid-loop disconnect (which can erase
     // entries from the caller's underlying set, e.g. a Channel::members)
     // cannot invalidate our iterator.
     std::set<int> snapshot(fds);
+    // Sender is always skipped inside the loop: if a self-send failed
+    // mid-iteration it would disconnect sender, leaving the `sender`
+    // reference dangling for the remaining peer sends. Self-echo is
+    // performed once after the loop, so it's the last thing we do.
+    int senderFd = sender.getFd();
     for (std::set<int>::iterator it = snapshot.begin();
          it != snapshot.end();
          ++it)
     {
         int fd = *it;
-        if (fd == excludeFd)
+        if (fd == excludeFd || fd == senderFd)
             continue;
         std::map<int, Client>::iterator ci = this->client.find(fd);
         if (ci == this->client.end())
             continue;
         this->sendGenericMsg(sender, ci->second, cmd, msg);
     }
+    if (echoToSender)
+        return this->sendGenericMsg(sender, sender, cmd, msg);
+    return 0;
 }
 
 std::set<int> Server::getCommonChannelFds(int fd) const {

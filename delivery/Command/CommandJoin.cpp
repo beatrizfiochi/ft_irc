@@ -103,7 +103,8 @@ int Command::handleJoin(Server &server, Client &client)
             if (!key.empty())
                  ch->setKey(key);
             ch->addClient(client.getFd());
-            server.broadcastMsg(*ch, client, "JOIN " + channelName, "");
+            if (server.broadcastMsg(*ch, client, "JOIN " + channelName, "") < 0)
+                return -1;
             // sendTopic(server, client, *ch);
             // sendNames(server, client, *ch);
             continue;
@@ -137,7 +138,8 @@ int Command::handleJoin(Server &server, Client &client)
 
         // Add the user
         ch->addClient(client.getFd());
-        server.broadcastMsg(*ch, client, "JOIN " + channelName, "");
+        if (server.broadcastMsg(*ch, client, "JOIN " + channelName, "") < 0)
+            return -1;
     //     sendTopic(server, client, *ch);
     //     sendNames(server, client, *ch);
     }

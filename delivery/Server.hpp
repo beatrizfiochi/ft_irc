@@ -33,11 +33,11 @@ public:
     void removeChannel(const std::string &name);
     void kickClient(int fd, Channel &ch);
 
-    void broadcastMsg(Channel& ch, Client &sender, const std::string &cmd,
-                      const std::string& msg, int excludeFd = -1);
-    void broadcastTo(const std::set<int> &fds, Client &sender,
-                     const std::string &cmd, const std::string &msg,
-                     int excludeFd = -1);
+    int broadcastMsg(Channel& ch, Client &sender, const std::string &cmd,
+                     const std::string& msg, int excludeFd = -1);
+    int broadcastTo(const std::set<int> &fds, Client &sender,
+                    const std::string &cmd, const std::string &msg,
+                    int excludeFd = -1, bool echoToSender = false);
     std::set<int> getCommonChannelFds(int fd) const;
 
 private:

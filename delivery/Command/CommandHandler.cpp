@@ -50,9 +50,9 @@ int Command::handleNick(Server &server, Client &client) {
                                 newNick, "Nickname is already in use");
 
     if (client.isRegistered()) {
-        std::set<int> recipients = server.getCommonChannelFds(client.getFd());
-        recipients.insert(client.getFd());
-        server.broadcastTo(recipients, client, "NICK", newNick);
+        std::set<int> peers = server.getCommonChannelFds(client.getFd());
+        if (server.broadcastTo(peers, client, "NICK", newNick, -1, true) < 0)
+            return -1;
     }
 
     std::string old = client.getNick();

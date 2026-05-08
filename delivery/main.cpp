@@ -1,10 +1,18 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <csignal>
 #include "log.hpp"
 #include "Server.hpp"
 
 LOG_REGISTER(main);
+
+static volatile sig_atomic_t g_shutdown = 0;
+
+static void signalHandler(int signum) {
+    (void)signum;
+    g_shutdown = 1;
+}
 
 static void usage(char *argv[]) {
     std::cout << "Usage: " << argv[0] << " <port> <password>\n";
@@ -42,6 +50,11 @@ static bool parseArg(int argc, char *argv[], unsigned int &port, std::string &pa
 int main(int argc, char *argv[]) {
     LOG_INF("IRC server started");
 
+    std::signal(SIGINT, signalHandler); // Ctrl+C
+    std::signal(SIGTERM, signalHandler); // Kill
+    std::signal(SIGQUIT, signalHandler); // Ctrl+barra invertida
+    std::signal(SIGPIPE, SIG_IGN); // Client desconected during write
+
     unsigned int port;
     std::string passw;
     if (!parseArg(argc, argv, port, passw))
@@ -49,6 +62,8 @@ int main(int argc, char *argv[]) {
 
     LOG_DBG("port: " << port << "; password: " << passw);
     Server srv(port, passw);
-    srv.run();
+    srv.run(&g_shutdown);
+
+    LOG_INF("IRC server stopped");
     return 0;
 }

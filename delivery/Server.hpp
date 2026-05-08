@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <csignal>
 #include "Client/Client.hpp"
 #include "Channel/Channel.hpp"
 
@@ -12,7 +13,7 @@ public:
     Server(void);
     Server(unsigned int port, std::string passw);
     ~Server(void);
-    int run(void);
+    int run(volatile sig_atomic_t *shutdown_flag); // *shutdown_flag is the pointer of signals
 
     int sendGenericMsg(Client &source, Client &target,
                        const std::string &target_msg, const std::string &msg);
@@ -45,6 +46,7 @@ private:
     std::string passw;
     int srv_socket;
     int epollfd;
+    volatile sig_atomic_t *shutdown_flag; 
     // Client map <fd, Client>
     std::map<int, Client>           client;
     std::map<std::string, Client*>  nickList;
@@ -62,5 +64,7 @@ private:
     int processBufferedMessages(int fd);
 
     void removeClientFromChannels(int fd);
+
+    void shutdown(void);
 };
 #endif // _SERVER_HPP_

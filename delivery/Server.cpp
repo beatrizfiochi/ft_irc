@@ -39,11 +39,11 @@
 
 LOG_REGISTER(server);
 
-Server::Server(void) : port(666), passw("42"), srv_socket(-1), epollfd(-1) {}
+Server::Server(void) : port(666), passw("42"), srv_socket(-1), epollfd(-1), shutdown_flag(NULL) {}
 
 Server::Server(unsigned int port, std::string passw) :
                         port(port), passw(passw),
-                        srv_socket(-1), epollfd(-1) {}
+                        srv_socket(-1), epollfd(-1), shutdown_flag(NULL) {}
 
 Server::~Server(void) {
     if (this->srv_socket >= 0)
@@ -112,9 +112,11 @@ int Server::listenEvents(void) {
         return EXIT_FAILURE;
     }
 
-    for (;;) {
+    while (!*(this->shutdown_flag)) {
         nfds = epoll_wait(this->epollfd, events, MAX_EVENTS, -1);
         if (nfds == -1) {
+            if (errno == EINTR)
+                continue;
             LOG_ERR("epoll_wait");
             exit(EXIT_FAILURE);
         }
@@ -133,6 +135,8 @@ int Server::listenEvents(void) {
             }
         }
     }
+    LOG_INF("Shutdown signal received, cleaning up...");
+    this->shutdown(); // Notify Clients and shutdown
     return 0;
 }
 
@@ -361,7 +365,8 @@ int Server::receiveData(int fd) {
     return ret;
 }
 
-int Server::run(void) {
+int Server::run(volatile sig_atomic_t *shutdown_flag) {
+    this->shutdown_flag = shutdown_flag;
     int ret = openServerSocket();
     if (ret != 0)
         return ret;
@@ -450,4 +455,24 @@ std::set<int> Server::getCommonChannelFds(int fd) const {
         result.insert(members.begin(), members.end());
     }
     return result;
+}
+
+void Server::shutdown(void) {
+    for (std::map<int, Client>::iterator it = this->client.begin();
+         it != this->client.end(); ++it)
+    {
+        std::string msg = "ERROR :Closing Link: " +
+                          this->getHostname() +
+                          " (Server shutting down)\r\n";
+        send(it->first, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+        close(it->first);
+    }
+    this->client.clear();
+    this->nickList.clear();
+    this->channels.clear();
+
+    if (this->epollfd >= 0) {
+        close(this->epollfd);
+        this->epollfd = -1;
+    }
 }

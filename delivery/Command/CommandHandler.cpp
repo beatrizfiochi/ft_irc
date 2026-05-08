@@ -77,15 +77,12 @@ int Command::handleUser(Server &server, Client &client) {
     // hostname and servername are ignored
     client.setUser(this->param[0]);
     client.setReal(this->param[3]);
-    if (client.getPassFlag() && (client.getNick() != "*"))
+    if (client.getPassFlag() && (client.getNick() != "*")) {
         client.setRegister(true);
-    else {
-        LOG_ERR("Registration failed. Pass flag: " << client.getPassFlag() << ", Nick: " << client.getNick());
-        server.disconnectClient(client.getFd());
-        return EXIT_FAILURE;
+        return Command::handleMOTD(server, client);
     }
-
-    return Command::handleMOTD(server, client);
+    LOG_ERR("Registration failed. Pass flag: " << client.getPassFlag() << ", Nick: " << client.getNick());
+    return -EXIT_FAILURE;
 }
 
 int Command::handleMOTD(Server &server, Client &client) {

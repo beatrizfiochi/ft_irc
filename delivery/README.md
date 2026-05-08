@@ -71,6 +71,7 @@ AI was used to summarize the subject requirements, draft the README structure, a
 ## TODOs
 
 - [ ] Reminder to add 42Header in all files
+- [ ] Audit handlers that call `sendReply`/`broadcastMsg` without checking the return value: an inline disconnect on a write failure leaves `client` as a dangling reference for any subsequent statement or loop iteration. Affected sites: `CommandChannelOps.cpp` `handleInvite` (RPL_INVITING followed by INVITE forward), `handleTopic` (RPL_TOPIC), `CommandJoin.cpp` `handleJoin` per-channel loop, `CommandHandler.cpp` `handlePrivMsg` per-target loop. Fix pattern: capture the return and propagate the negative value, like `handleNick` does.
 - [x] Should run as `./ircserv <port> <password>`
 - [x] README: Fill the Description section
 - [x] README: Fill the Instruction section

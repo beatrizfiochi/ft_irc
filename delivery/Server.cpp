@@ -191,15 +191,19 @@ void Server::connectClient(int fd) {
 }
 
 void Server::disconnectClient(int fd) {
-    removeClientFromChannels(fd);
+    // Idempotent: a write failure inside a command may have already
+    // disconnected the same fd via flushReplyBuffer. Subsequent callers
+    // (e.g. receiveData propagating a negative handler return) hit this
+    // early-return instead of double-closing.
     std::map<int, Client>::iterator it = client.find(fd);
-    if (it != client.end()) {
-        std::string nick = it->second.getNick();
-        if (!nick.empty())
-            nickList.erase(nick);
+    if (it == client.end())
+        return;
 
-        client.erase(it);
-    }
+    removeClientFromChannels(fd);
+    std::string nick = it->second.getNick();
+    if (!nick.empty())
+        nickList.erase(nick);
+    client.erase(it);
     // epoll_ctl DEL is automatic on close. Check NOTES on epoll manual
     close(fd);
 }
@@ -243,7 +247,8 @@ int Server::flushReplyBuffer(int fd) {
     return 0;
 }
 
-void Server::processBufferedMessages(int fd) {
+int Server::processBufferedMessages(int fd) {
+    int ret = 0;
     std::string &buffer = this->client[fd].getReadBuf();
 
     while (true) {
@@ -261,12 +266,13 @@ void Server::processBufferedMessages(int fd) {
 
         Command *cmd = Command::parsing(message);
         if (cmd != NULL) {
-            int ret = cmd->execute(*this, this->client[fd]);
+            ret = cmd->execute(*this, this->client[fd]);
             delete cmd;
             if (ret < 0)
                 break;
         }
     }
+    return ret;
 }
 
 int Server::sendPrivMsg(Client &source, Client &target, const std::string &msg) {
@@ -349,8 +355,10 @@ int Server::receiveData(int fd) {
     if (this->client.find(fd) == this->client.end())
         return 0;
 
-    this->processBufferedMessages(fd);
-    return 0;
+    int ret = this->processBufferedMessages(fd);
+    if (ret < 0)
+        this->disconnectClient(fd);
+    return ret;
 }
 
 int Server::run(void) {

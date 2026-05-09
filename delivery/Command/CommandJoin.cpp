@@ -146,3 +146,50 @@ int Command::handleJoin(Server &server, Client &client)
 
     return 0;
 }
+
+int Command::handlePart(Server &server, Client &client) {
+    if (this->param.size() < 1)
+        return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS, this->command,
+                            "Not enough parameters");
+
+    if (!client.isRegistered())
+        return server.sendReply(client.getFd(), ERR_NOTREGISTERED,
+                            "", "You have not registered");
+
+    std::vector<std::string> channels = split(this->param[0], ',');
+
+    std::string reason = "";
+    if (this->param.size() > 1)
+        reason = this->param[1];
+
+    for (size_t i = 0; i < channels.size(); i++) {
+        std::string channelName = channels[i];
+
+        if (channelName.empty())
+            continue;
+
+        Channel *ch = server.getChannel(channelName);
+        if (ch == NULL) {
+            server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL,
+                            channelName, "No such channel");
+            continue;
+        }
+
+        if (!ch->isMember(client.getFd())) {
+            server.sendReply(client.getFd(), ERR_NOTONCHANNEL,
+                            channelName, "You're not on that channel");
+            continue;
+        }
+
+        if (server.broadcastMsg(*ch, client, "PART " + channelName, reason) < 0)
+            return -1;
+
+        ch->removeClient(client.getFd());
+
+        if (ch->getMembers().empty())
+            server.removeChannel(channelName);
+    }
+
+    return 0;
+
+    }

@@ -33,6 +33,8 @@ int Command::execute(Server &server, Client &client) {
         ret = this->handlePing(server, client);
     else if (this->command == "PONG")
         ret = this->handlePong(server, client);
+    else if (this->command == "PART")
+        ret = this->handlePart(server, client);
     else
         ret = this->handleUnknownCommand(server, client);
 

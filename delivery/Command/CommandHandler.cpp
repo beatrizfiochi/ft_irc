@@ -102,17 +102,15 @@ int Command::handleMOTD(Server &server, Client &client) {
     return ret;
 }
 
-int Command::handleQuit(const std::vector<std::string> &args) {
-    (void)args;
-// TODO tem de implementar QUIT
-// A sugestao eh que o Server execute esse comando
-// reason seria uma mensagem montada, tipo
-// std::string reason = "Tchau ..."
-// if (!args[0].empty())
-//      reason = args[0];
-// std::string msg = ":" + client.getNick() + " QUIT :" + reason;
-// channel.broadcast(msg);
-    return (0);
+int Command::handleQuit(Server &server, Client &client) {
+    std::string reason = "";
+    if (!this->param.empty())
+        reason = this->param[0];
+
+    std::set<int> peers = server.getCommonChannelFds(client.getFd());
+    server.broadcastTo(peers, client, "QUIT", reason, client.getFd(), false);
+
+    return -1; // signals the server to stop processing this fd
 }
 
 int Command::handlePrivMsg(Server &server, Client &client) {

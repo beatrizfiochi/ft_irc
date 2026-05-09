@@ -61,7 +61,7 @@ private:
     int handleNick(Server &server, Client &client);
     int handleUser(Server &server, Client &client);
     int handleMOTD(Server &server, Client &client);
-    int handleQuit(const std::vector<std::string> &args);
+    int handleQuit(Server &server, Client &client);
     int handlePrivMsg(Server &server, Client &client);
     int handleKick(Server &server, Client &client);
     int handleInvite(Server &server, Client &client);

@@ -35,6 +35,8 @@ int Command::execute(Server &server, Client &client) {
         ret = this->handlePong(server, client);
     else if (this->command == "PART")
         ret = this->handlePart(server, client);
+    else if (this->command == "QUIT")
+        ret = this->handleQuit(server, client);
     else
         ret = this->handleUnknownCommand(server, client);
 

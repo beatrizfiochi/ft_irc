@@ -27,6 +27,8 @@ public:
     std::string getHostname(void) const;
     void addClientToNickList(Client &c, const std::string &oldname);
     Client *getClient(const std::string &nick);
+    
+    Client *getClientByFd(int fd);
 
     // Channel integration
     Channel* getChannel(const std::string &name);
@@ -46,7 +48,7 @@ private:
     std::string passw;
     int srv_socket;
     int epollfd;
-    volatile sig_atomic_t *shutdown_flag; 
+    volatile sig_atomic_t *shutdown_flag;
     // Client map <fd, Client>
     std::map<int, Client>           client;
     std::map<std::string, Client*>  nickList;

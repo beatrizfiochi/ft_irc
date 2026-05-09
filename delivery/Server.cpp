@@ -190,6 +190,13 @@ Client *Server::getClient(const std::string &nick) {
     return this->nickList[nick];
 }
 
+Client *Server::getClientByFd(int fd) {
+    std::map<int, Client>::iterator i = this->client.find(fd);
+    if (i == this->client.end())
+        return NULL;
+    return &i->second;
+}
+
 void Server::connectClient(int fd) {
     this->client[fd] = Client(fd);
 }

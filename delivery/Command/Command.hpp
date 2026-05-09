@@ -38,6 +38,8 @@
 #define RPL_NOTOPIC         331 // "<channel> :No topic is set"
 #define RPL_TOPIC           332 // "<channel> :<topic>"
 #define RPL_CHANNELMODEIS   324 // "<channel> <mode> <mode params>"
+#define RPL_NAMREPLY        353 // "<channel> :[[@|+]<nick> [[@|+]<nick> [...]]]"
+#define RPL_ENDOFNAMES      366 // "<channel> :End of /NAMES list"
 
 class Command {
 public:

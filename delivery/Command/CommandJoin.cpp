@@ -79,6 +79,52 @@ static int sendTopic(Server &server, Client &client, const Channel &channel) {
         return server.sendReply(client.getFd(), RPL_TOPIC, channelName, channel.getTopic());
 }
 
+static int sendNames(Server &server, Client &client, const Channel &channel) {
+    const std::set<int> &members = channel.getMembers();
+
+    std::string current;
+
+    const size_t MAX_NAMES_LEN = 400;
+
+    for (std::set<int>::const_iterator i = members.begin(); i != members.end(); ++i) {
+        Client *member = server.getClientByFd(*i);
+        if (member == NULL)
+            continue;
+
+        std::string nicks;
+
+        if (channel.isOperator(*i))
+            nicks += "@";
+        nicks += member->getNick();
+
+        size_t extra = nicks.size();
+        if (!current.empty())
+            extra += 1;
+
+        // Handle max 512 bytes (IRC protocol)
+        if (!current.empty() && current.size() + extra > MAX_NAMES_LEN) {
+            if (server.sendReply(client.getFd(), RPL_NAMREPLY,
+                    "= " + channel.getName(), current) < 0)
+                return -1;
+            current.clear();
+        }
+
+        if (!current.empty())
+            current += " ";
+
+        current += nicks;
+    }
+
+    if (!current.empty()) {
+        if (server.sendReply(client.getFd(), RPL_NAMREPLY,
+                    "= " + channel.getName(), current) < 0)
+                return -1;
+    }
+
+    return server.sendReply(client.getFd(), RPL_ENDOFNAMES,
+                    channel.getName(), "End of /NAMES list");
+}
+
 // verificar se o canal existe -> se nao existe cria e o user 'e o operador
 // se existir -> verifica restricoes (invite-only, key, limit
 // (limite de pessoas no canal e limite de canais para aquele client))
@@ -116,7 +162,8 @@ int Command::handleJoin(Server &server, Client &client)
                 return -1;
             if (sendTopic(server, client, *ch) < 0)
                 return -1;
-            // sendNames(server, client, *ch);
+            if (sendNames(server, client, *ch) < 0)
+                return -1;
             continue;
         }
 
@@ -150,8 +197,10 @@ int Command::handleJoin(Server &server, Client &client)
         ch->addClient(client.getFd());
         if (server.broadcastMsg(*ch, client, "JOIN " + channelName, "") < 0)
             return -1;
-        sendTopic(server, client, *ch);
-    //     sendNames(server, client, *ch);
+        if (sendTopic(server, client, *ch) < 0)
+            return -1;
+        if (sendNames(server, client, *ch) < 0)
+            return -1;
     }
 
     return 0;

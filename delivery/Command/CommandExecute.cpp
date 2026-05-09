@@ -29,6 +29,10 @@ int Command::execute(Server &server, Client &client) {
         ret = this->handleTopic(server, client);
     else if (this->command == "MODE")
         ret = this->handleMode(server, client);
+    else if (this->command == "PING")
+        ret = this->handlePing(server, client);
+    else if (this->command == "PONG")
+        ret = this->handlePong(server, client);
     else
         ret = this->handleUnknownCommand(server, client);
 

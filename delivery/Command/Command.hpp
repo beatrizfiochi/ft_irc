@@ -29,6 +29,7 @@
 #define ERR_BADCHANNELKEY       475 // "<channel> :Cannot join channel (+k)"
 #define ERR_CHANNELISFULL       471 // "<channel> :Cannot join channel (+l)"
 #define ERR_CANNOTSENDTOCHAN    404 // "<channel name> :Cannot send to channel"
+#define ERR_NOORIGIN            409 // ":No origin specified"
 
 #define RPL_MOTDSTART       375 // ":- <server> Message of the day - "
 #define RPL_MOTD            372 // ":- <text>"
@@ -67,6 +68,8 @@ private:
     int handleTopic(Server &server, Client &client);
     int handleMode(Server &server, Client &client);
     int handleJoin(Server &server, Client &client);
+    int handlePing(Server &server, Client &client);
+    int handlePong(Server &server, Client &client);
 };
 
 #endif // _COMMAND_HPP_

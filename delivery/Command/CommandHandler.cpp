@@ -170,3 +170,24 @@ int Command::handlePrivMsg(Server &server, Client &client) {
     }
     return 0;
 }
+
+int Command::handlePing(Server &server, Client &client) {
+    // Reject if the Client is not registered
+    if (!client.isRegistered())
+        return server.sendReply(client.getFd(), ERR_NOTREGISTERED, this->command, "You have not registered");
+
+    if (this->param.empty())
+        return server.sendReply(client.getFd(), ERR_NOORIGIN, "", "No origin specified");
+
+    std::string token = this->param[0];
+
+    Client srv(0, server.getHostname());
+    return server.sendGenericMsg(srv, client, "PONG " + server.getHostname(), token);
+}
+
+// Silently accept PONG to prevent it from being treated as an unknown command
+int Command::handlePong(Server &server, Client &client) {
+    (void)server;
+    (void)client;
+    return 0;
+}

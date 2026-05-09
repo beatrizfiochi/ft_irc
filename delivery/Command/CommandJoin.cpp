@@ -70,6 +70,15 @@ static bool isValidChannelName(const std::string &name)
     return true;
 }
 
+static int sendTopic(Server &server, Client &client, const Channel &channel) {
+    const std::string channelName = channel.getName();
+    const std::string topic = channel.getTopic();
+    if (topic.empty())
+        return server.sendReply(client.getFd(), RPL_NOTOPIC, channelName, "No topic is set");
+    else
+        return server.sendReply(client.getFd(), RPL_TOPIC, channelName, channel.getTopic());
+}
+
 // verificar se o canal existe -> se nao existe cria e o user 'e o operador
 // se existir -> verifica restricoes (invite-only, key, limit
 // (limite de pessoas no canal e limite de canais para aquele client))
@@ -105,7 +114,8 @@ int Command::handleJoin(Server &server, Client &client)
             ch->addClient(client.getFd());
             if (server.broadcastMsg(*ch, client, "JOIN " + channelName, "") < 0)
                 return -1;
-            // sendTopic(server, client, *ch);
+            if (sendTopic(server, client, *ch) < 0)
+                return -1;
             // sendNames(server, client, *ch);
             continue;
         }
@@ -140,7 +150,7 @@ int Command::handleJoin(Server &server, Client &client)
         ch->addClient(client.getFd());
         if (server.broadcastMsg(*ch, client, "JOIN " + channelName, "") < 0)
             return -1;
-    //     sendTopic(server, client, *ch);
+        sendTopic(server, client, *ch);
     //     sendNames(server, client, *ch);
     }
 

@@ -27,10 +27,10 @@ int Command::handleKick(Server& server, Client& client) {
     }
 
     Client *target = server.getClient(param[1]);
-    // ERR_NOTONCHANNEL
+    // ERR_NOSUCHNICK
     if (target == NULL) {
         LOG_DBG("No such nick/channel");
-        return server.sendReply(target->getFd(), ERR_NOSUCHNICK, this->command, "No such nick/channel");
+        return server.sendReply(client.getFd(), ERR_NOSUCHNICK, param[1], "No such nick/channel");
     }
 
     // ERR_CHANOPRIVSNEEDED
@@ -301,5 +301,10 @@ int Command::handleMode(Server &server, Client &client) {
             }
         }
     }
+
+    std::string modeParameters = param[1];
+    for (size_t i = 2; i < param.size(); i++)
+        modeParameters += " " + param[i];
+    server.broadcastMsg(*channel, client, "MODE " + channel->getName(), modeParameters);
     return 0;
 }

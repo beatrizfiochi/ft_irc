@@ -180,14 +180,14 @@ int Command::handleMode(Server &server, Client &client) {
         return server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL, param[0], "No such channel");
     }
 
-    if (!channel->isOperator(client.getFd())) {
-        LOG_DBG("It needs a channel operator");
-        return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED, param[0], "It needs a channel operator");
-    }
-
     if (param.size() == 1) {
         LOG_DBG("Display MODEs");
         return server.sendReply(client.getFd(), RPL_CHANNELMODEIS, channel->getName() + " +" + channel->getModeList(), "");
+    }
+
+    if (!channel->isOperator(client.getFd())) {
+        LOG_DBG("It needs a channel operator");
+        return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED, param[0], "It needs a channel operator");
     }
 
 // -------------------------------------------------------------------------------------------------------------------

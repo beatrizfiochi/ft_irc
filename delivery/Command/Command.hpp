@@ -71,7 +71,6 @@ private:
     int handleMode(Server &server, Client &client);
     int handleJoin(Server &server, Client &client);
     int handlePing(Server &server, Client &client);
-    int handlePong(Server &server, Client &client);
     int handlePart(Server &server, Client &client);
 };
 

@@ -31,8 +31,6 @@ int Command::execute(Server &server, Client &client) {
         ret = this->handleMode(server, client);
     else if (this->command == "PING")
         ret = this->handlePing(server, client);
-    else if (this->command == "PONG")
-        ret = this->handlePong(server, client);
     else if (this->command == "PART")
         ret = this->handlePart(server, client);
     else if (this->command == "QUIT")

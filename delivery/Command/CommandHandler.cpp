@@ -182,10 +182,3 @@ int Command::handlePing(Server &server, Client &client) {
     Client srv(0, server.getHostname());
     return server.sendGenericMsg(srv, client, "PONG " + server.getHostname(), token);
 }
-
-// Silently accept PONG to prevent it from being treated as an unknown command
-int Command::handlePong(Server &server, Client &client) {
-    (void)server;
-    (void)client;
-    return 0;
-}

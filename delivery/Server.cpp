@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <cerrno>
 #include <cstring>
 #include <cstdlib>
@@ -212,6 +213,7 @@ void Server::disconnectClient(int fd) {
     if (it == client.end())
         return;
 
+    removeInvitesFromChannels(it->second.getSessionId());
     removeClientFromChannels(fd);
     std::string nick = it->second.getNick();
     if (!nick.empty())
@@ -408,6 +410,13 @@ void Server::removeClientFromChannels(int fd) {
             if(i->second.isMember(fd))
                 i->second.removeClient(fd);
         }
+}
+
+void Server::removeInvitesFromChannels(std::size_t sessionId) {
+    for (std::map<std::string, Channel>::iterator i = channels.begin();
+         i != channels.end(); ++i) {
+        i->second.removeInvite(sessionId);
+    }
 }
 
 void Server::kickClient(int fd, Channel &ch) {

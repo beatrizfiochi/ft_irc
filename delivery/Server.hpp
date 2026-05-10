@@ -2,6 +2,7 @@
 #define _SERVER_HPP_
 
 #include <map>
+#include <cstddef>
 #include <set>
 #include <string>
 #include <csignal>
@@ -67,6 +68,7 @@ private:
     int processBufferedMessages(int fd);
 
     void removeClientFromChannels(int fd);
+    void removeInvitesFromChannels(std::size_t sessionId);
 
     void shutdown(void);
 };

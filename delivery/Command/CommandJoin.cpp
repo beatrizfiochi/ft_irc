@@ -194,6 +194,8 @@ int Command::handleJoin(Server &server, Client &client)
 
         // Add the user
         ch->addClient(client.getFd());
+        // Consume the invite on a successful JOIN so it stays one-shot.
+        ch->removeInvite(client.getSessionId());
         if (server.broadcastMsg(*ch, client, "JOIN " + channelName, "") < 0)
             return -1;
         if (sendTopic(server, client, *ch) < 0)

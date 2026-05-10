@@ -66,31 +66,40 @@ int Command::handleInvite(Server& server, Client& client) {
     }
 
     // ERR_NOSCHNICK
-    Client *target = server.getClient(param[0]);
+    const std::string invited_nickname = param[0];
+    Client *target = server.getClient(invited_nickname);
     if (!target) {
         LOG_DBG("No such nick/channel");
         return server.sendReply(client.getFd(), ERR_NOSUCHNICK, this->command, "No such nick/channel");
     }
 
+    const std::string ch_name = param[1];
+    Channel *channel = server.getChannel(ch_name);
     // There is no requirement that the channel the target user is being invited to
-    // must exist or be a valid channel ( o RFC nao diz o que fazer nesse caso)
-    // ERR_NOSUCHCHANNEL (coloquei para evitar segfault do adding do client ao channel = NULL)
-    Channel *channel = server.getChannel(param[1]);
-    if (channel == NULL) {
-        LOG_DBG("No such channel");
-        return server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL, param[1], "No such channel");
+    // must exist or be a valid channel
+    if (channel != NULL) {
+        if (!channel->isMember(client.getFd())) {
+            LOG_DBG("User doing the invitation (" + client.getNick() + ") is NOT member of the channel " + ch_name);
+            return server.sendReply(client.getFd(), ERR_NOTONCHANNEL,
+                                    ch_name, "You're not on that channel");
+        }
+        // ERR_CHANOPRIVSNEEDED
+        if (channel->isInviteOnly() && !channel->isOperator(client.getFd())) {
+            LOG_DBG("It needs a channel operator");
+            return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED,
+                                    ch_name, "It needs a channel operator");
+        }
+        if (channel->isMember(target->getFd())) {
+            LOG_DBG("User " + target->getNick() + " is already member of the channel " + ch_name);
+            return server.sendReply(client.getFd(), ERR_USERONCHANNEL,
+                                    target->getNick() + " " + channel->getName(),
+                                    "is already on channel");
+        }
+        channel->inviteClient(target->getSessionId());
     }
-    // ERR_CHANOPRIVSNEEDED
-    if (channel->isInviteOnly() && !channel->isOperator(client.getFd())) {
-        LOG_DBG("It needs a channel operator");
-        return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED, param[1], "It needs a channel operator");
-    }
-
-    channel->inviteClient(target->getSessionId());
-    //channel->addClient(target->getFd());
-    LOG_DBG("Adding User " + param[0] + " to channel " + param[1]);
-    server.sendReply(client.getFd(), RPL_INVITING, param[0] + " " + channel->getName(), "");
-    server.sendGenericMsg(client, *target, "INVITE " + target->getNick() + " " + channel->getName(), "");
+    LOG_DBG("Inviting user " + invited_nickname + " to channel " + ch_name);
+    server.sendReply(client.getFd(), RPL_INVITING, invited_nickname + " " + ch_name, "");
+    server.sendGenericMsg(client, *target, "INVITE " + target->getNick() + " " + ch_name, "");
     return 0;
 }
 

@@ -88,15 +88,3 @@ std::string Client::getReal(void) const {
 void Client::setReal(const std::string &realname) {
     this->realName = realname;
 }
-
-// TODOs
-//         void getUser();
-//         void getReal();
-//
-//         void setUser();
-//         void setReal();
-//
-//         void setPassOK("true");
-// 	       void setRegister("true");
-//
-//         bool isRegistered())

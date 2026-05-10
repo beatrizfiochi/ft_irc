@@ -88,19 +88,18 @@ AI was used to summarize the subject requirements, draft the README structure, a
         - [x] JOIN
         - [x] PRIVMSG
         - [x] PASS
-        - [ ] PART
-        - [ ] NAMES
+        - [x] PART
         - [x] 421 ERR_UNKNOWNCOMMAND - when we receive an unknown command
         - [ ] check others...
     - [x] All the messages sent from one client to a channel have to be forwarded to every other client that joined the channel.
     - [x] You must have operators and regular users.
     - Then, you have to implement the commands that are specific to channel operators:
-        - [ ] KICK - Eject a client from the channel
+        - [x] KICK - Eject a client from the channel
         - [ ] INVITE - Invite a client to a channel
-        - [ ] TOPIC - Change or view the channel topic
-        - [ ] MODE - Change the channel’s mode:
+        - [x] TOPIC - Change or view the channel topic
+        - [x] MODE - Change the channel’s mode:
             - [ ] i: Set/remove Invite-only channel
-            - [ ] t: Set/remove the restrictions of the TOPIC command to channel operators
-            - [ ] k: Set/remove the channel key (password)
-            - [ ] o: Give/take channel operator privilege
-            - [ ] l: Set/remove the user limit to channel
+            - [x] t: Set/remove the restrictions of the TOPIC command to channel operators
+            - [x] k: Set/remove the channel key (password)
+            - [x] o: Give/take channel operator privilege
+            - [x] l: Set/remove the user limit to channel

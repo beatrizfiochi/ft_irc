@@ -3,7 +3,6 @@
 #include "../log.hpp"
 #include <cstdlib>
 
-// TODO entender o funcionamento do Log
 LOG_REGISTER(Command_ChannelOps);
 
 //       Command: KICK

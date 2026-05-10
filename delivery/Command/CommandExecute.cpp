@@ -2,41 +2,37 @@
 #include "../log.hpp"
 #include "../Server.hpp"
 #include "../Client/Client.hpp"
+#include <map>
+#include <utility>
 
 LOG_REGISTER(CmdExecute);
 
 int Command::execute(Server &server, Client &client) {
-    (void)server;
-    (void)client;
-    int ret = 0;
+    typedef int (Command::*CommandHandler)(Server&, Client&);
 
-    //TODO: Move this if/else to a map
-    if (this->command == "NICK")
-        ret = this->handleNick(server, client);
-    else if (this->command == "PASS")
-        ret = this->handlePass(server, client);
-    else if (this->command == "USER")
-        ret = this->handleUser(server, client);
-    else if (this->command == "PRIVMSG")
-        ret = this->handlePrivMsg(server, client);
-    else if (this->command == "JOIN")
-        ret = this->handleJoin(server, client);
-    else if (this->command == "KICK")
-        ret = this->handleKick(server, client);
-    else if (this->command == "INVITE")
-        ret = this->handleInvite(server, client);
-    else if (this->command == "TOPIC")
-        ret = this->handleTopic(server, client);
-    else if (this->command == "MODE")
-        ret = this->handleMode(server, client);
-    else if (this->command == "PING")
-        ret = this->handlePing(server, client);
-    else if (this->command == "PART")
-        ret = this->handlePart(server, client);
-    else if (this->command == "QUIT")
-        ret = this->handleQuit(server, client);
-    else
-        ret = this->handleUnknownCommand(server, client);
+    typedef std::pair<std::string, CommandHandler> HandlerPair;
+    static const HandlerPair pairs[] = {
+        HandlerPair("NICK", &Command::handleNick),
+        HandlerPair("PASS", &Command::handlePass),
+        HandlerPair("USER", &Command::handleUser),
+        HandlerPair("PRIVMSG", &Command::handlePrivMsg),
+        HandlerPair("JOIN", &Command::handleJoin),
+        HandlerPair("KICK", &Command::handleKick),
+        HandlerPair("INVITE", &Command::handleInvite),
+        HandlerPair("TOPIC", &Command::handleTopic),
+        HandlerPair("MODE", &Command::handleMode),
+        HandlerPair("PING", &Command::handlePing),
+        HandlerPair("PART", &Command::handlePart),
+        HandlerPair("QUIT", &Command::handleQuit),
+    };
 
-    return ret;
+    static const std::map<std::string, CommandHandler>
+                handlers(pairs, pairs + sizeof(pairs) / sizeof(pairs[0]));
+
+    std::map<std::string, CommandHandler>::const_iterator it = handlers.find(this->command);
+
+    if (it != handlers.end())
+        return (this->*(it->second))(server, client);
+
+    return this->handleUnknownCommand(server, client);
 }

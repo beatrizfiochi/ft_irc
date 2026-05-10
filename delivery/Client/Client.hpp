@@ -1,11 +1,13 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
 class Client {
     private:
+        std::size_t sessionId;
         int fd;
 
         std::string nickName;
@@ -21,14 +23,15 @@ class Client {
 
     public:
         Client();
-        Client(int fd);
-        Client(int fd, std::string nickname);
+        Client(int fd, std::size_t sessionId);
+        Client(int fd, const std::string &nickname, std::size_t sessionId = 0);
         Client(Client const &other);
         Client& operator=(Client const &rhs);
         ~Client();
 
         std::string& getReadBuf(void);
         std::string& getWriteBuf(void);
+        std::size_t getSessionId(void) const;
         int getFd(void) const;
 
         std::string getNick(void) const;

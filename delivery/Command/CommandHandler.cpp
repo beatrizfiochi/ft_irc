@@ -179,6 +179,6 @@ int Command::handlePing(Server &server, Client &client) {
 
     std::string token = this->param[0];
 
-    Client srv(0, server.getHostname());
+    Client srv(0, server.getHostname(), 0);
     return server.sendGenericMsg(srv, client, "PONG " + server.getHostname(), token);
 }

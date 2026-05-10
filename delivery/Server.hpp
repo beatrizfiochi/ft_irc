@@ -46,6 +46,7 @@ public:
 private:
     unsigned int port;
     std::string passw;
+    std::size_t nextSessionId;
     int srv_socket;
     int epollfd;
     volatile sig_atomic_t *shutdown_flag;

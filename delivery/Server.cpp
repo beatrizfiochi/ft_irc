@@ -39,10 +39,11 @@
 
 LOG_REGISTER(server);
 
-Server::Server(void) : port(666), passw("42"), srv_socket(-1), epollfd(-1), shutdown_flag(NULL) {}
+Server::Server(void) : port(666), passw("42"), nextSessionId(1), srv_socket(-1), epollfd(-1), shutdown_flag(NULL) {}
 
 Server::Server(unsigned int port, std::string passw) :
                         port(port), passw(passw),
+                        nextSessionId(1),
                         srv_socket(-1), epollfd(-1), shutdown_flag(NULL) {}
 
 Server::~Server(void) {
@@ -198,7 +199,8 @@ Client *Server::getClientByFd(int fd) {
 }
 
 void Server::connectClient(int fd) {
-    this->client[fd] = Client(fd);
+    Client c(fd, this->nextSessionId++);
+    this->client[fd] = c;
 }
 
 void Server::disconnectClient(int fd) {
@@ -321,7 +323,7 @@ int Server::sendGenericMsg(Client &source, Client &target,
 
 int Server::sendReply(int fd, int err, const std::string &cmd, const std::string &trailing) {
     //TODO: Move this Client server to internal attribute
-    Client server(this->srv_socket, SERVER_HOSTNAME);
+    Client server(this->srv_socket, SERVER_HOSTNAME, 0);
     std::stringstream ss;
     ss << err << " " << this->client[fd].getNick();
     if (!cmd.empty())

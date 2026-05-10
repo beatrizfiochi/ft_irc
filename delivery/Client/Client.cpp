@@ -1,28 +1,30 @@
 #include <cctype>
+#include <cstddef>
 #include "Client.hpp"
 #include "../log.hpp"
 
 LOG_REGISTER(client);
 
-Client::Client() : fd(-1), nickName("*"), userName(""), realName(""),
+Client::Client() : sessionId(0), fd(-1), nickName("*"), userName(""), realName(""),
               passOk(false), registered(false) {}
 
-Client::Client(int fd) : fd(fd), nickName("*"), userName(""), realName(""),
+Client::Client(int fd, std::size_t sessionId) : sessionId(sessionId), fd(fd), nickName("*"), userName(""), realName(""),
               passOk(false), registered(false) {
     LOG_INF("Client " << fd << " created");
 }
 
-Client::Client(int fd, std::string nickname) : fd(fd), nickName(nickname), userName(""), realName(""),
+Client::Client(int fd, const std::string &nickname, std::size_t sessionId) : sessionId(sessionId), fd(fd), nickName(nickname), userName(""), realName(""),
               passOk(false), registered(false) {
     LOG_INF("Client " << fd << ", " << nickname << " created");
 }
 
-Client::Client(Client const &other) : fd(other.fd), nickName(other.nickName), userName(other.userName),
+Client::Client(Client const &other) : sessionId(other.sessionId), fd(other.fd), nickName(other.nickName), userName(other.userName),
                 realName(other.realName), passOk(other.passOk), registered(other.registered) {}
 
 Client& Client::operator=(Client const &rhs) {
     if (this != &rhs)
     {
+        this->sessionId = rhs.sessionId;
         this->fd = rhs.fd;
         this->nickName = rhs.nickName;
         this->userName = rhs.userName;
@@ -41,6 +43,10 @@ std::string& Client::getReadBuf(void) {
 
 std::string& Client::getWriteBuf(void) {
     return this->write_buf;
+}
+
+std::size_t Client::getSessionId(void) const {
+    return this->sessionId;
 }
 
 int Client::getFd(void) const {

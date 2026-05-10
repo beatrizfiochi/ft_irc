@@ -95,10 +95,10 @@ AI was used to summarize the subject requirements, draft the README structure, a
     - [x] You must have operators and regular users.
     - Then, you have to implement the commands that are specific to channel operators:
         - [x] KICK - Eject a client from the channel
-        - [ ] INVITE - Invite a client to a channel
+        - [x] INVITE - Invite a client to a channel
         - [x] TOPIC - Change or view the channel topic
         - [x] MODE - Change the channel’s mode:
-            - [ ] i: Set/remove Invite-only channel
+            - [x] i: Set/remove Invite-only channel
             - [x] t: Set/remove the restrictions of the TOPIC command to channel operators
             - [x] k: Set/remove the channel key (password)
             - [x] o: Give/take channel operator privilege

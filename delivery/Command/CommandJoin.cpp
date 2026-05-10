@@ -125,11 +125,11 @@ static int sendNames(Server &server, Client &client, const Channel &channel) {
                     channel.getName(), "End of /NAMES list");
 }
 
-// verificar se o canal existe -> se nao existe cria e o user 'e o operador
-// se existir -> verifica restricoes (invite-only, key, limit
-// (limite de pessoas no canal e limite de canais para aquele client))
-// se passar pelas restricoes -> adiciona ao canal
-// broadcast da mensagem
+// Check if the channel exists -> if it doesn't exist, create the user and it's the operator;
+// if it exists -> check restrictions (invite-only, key,
+// limit (limit of people in the channel and limit of channels for that client));
+// if it passes the restrictions -> add it to the message broadcast channel
+
 int Command::handleJoin(Server &server, Client &client)
 {
     if (this->param.size() < 1)
@@ -174,7 +174,7 @@ int Command::handleJoin(Server &server, Client &client)
             continue;
         }
 
-        //TODO: Implement the isInvited
+        // TODO: Implement the isInvited
         if (ch->isInviteOnly() /* && !ch->isInvited(client) */) {
             server.sendReply(client.getFd(), ERR_INVITEONLYCHAN,
                             channelName, "Cannot join channel (+i)");

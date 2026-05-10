@@ -209,7 +209,7 @@ int Command::handleMode(Server &server, Client &client) {
             return server.sendReply(client.getFd(), ERR_UNKNOWNMODE, std::string(1, c), "is unknown mode char to me");
         }
 
-        // modes que precisam argumento
+        // Modes that need arguments
         std::string arg;
         long value = 0;
         if (c == 'o' || ((c == 'k' || c == 'l') && sign == '+')) {

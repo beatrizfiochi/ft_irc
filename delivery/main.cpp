@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 
     std::signal(SIGINT, signalHandler); // Ctrl+C
     std::signal(SIGTERM, signalHandler); // Kill
-    std::signal(SIGQUIT, signalHandler); // Ctrl+barra invertida
+    std::signal(SIGQUIT, signalHandler); // Ctrl+backslash
     std::signal(SIGPIPE, SIG_IGN); // Client desconected during write
 
     unsigned int port;

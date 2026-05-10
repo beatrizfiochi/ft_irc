@@ -51,8 +51,8 @@ Command *Command::parsing(const std::string &raw) {
 
     if (raw[0] == ':') {
         // Process the prefix
-        //TODO: Since this project does not have server-to-server communication. We probably don't need to implement
-        //prefix. Check this.
+        // TODO: Since this project does not have server-to-server communication. We probably don't need to implement
+        // prefix. Check this.
         (void)prefix;
         return NULL;
     } else if (raw[0] == ' ') {

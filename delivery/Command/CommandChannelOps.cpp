@@ -86,7 +86,7 @@ int Command::handleInvite(Server& server, Client& client) {
         return server.sendReply(client.getFd(), ERR_CHANOPRIVSNEEDED, param[1], "It needs a channel operator");
     }
 
-    channel->inviteClient(target->getFd());
+    channel->inviteClient(target->getSessionId());
     //channel->addClient(target->getFd());
     LOG_DBG("Adding User " + param[0] + " to channel " + param[1]);
     server.sendReply(client.getFd(), RPL_INVITING, param[0] + " " + channel->getName(), "");

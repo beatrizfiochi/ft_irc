@@ -2,6 +2,7 @@
 # define CHANNEL_HPP
 
 # include <string>
+# include <cstddef>
 # include <set>
 
 class Client;
@@ -23,7 +24,7 @@ class Channel {
         // modes
         std::string modeList;
         // invite
-        std::set<int> invitedClients;
+        std::set<std::size_t> invitedClients;
 
     public:
         Channel(void); // default constructor
@@ -49,9 +50,9 @@ class Channel {
         bool isInviteOnly(void) const;
         void setInviteOnly(bool flag);
 
-        void inviteClient(int fd);
-        void removeInvite(int fd);
-        bool isClientInvited(int fd);
+        void inviteClient(std::size_t sessionId);
+        void removeInvite(std::size_t sessionId);
+        bool isClientInvited(std::size_t sessionId);
 
         void setKey(const std::string &key);
         bool checkKey(const std::string &key);

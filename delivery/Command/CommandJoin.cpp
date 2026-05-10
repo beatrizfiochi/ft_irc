@@ -174,8 +174,7 @@ int Command::handleJoin(Server &server, Client &client)
             continue;
         }
 
-        // TODO: Implement the isInvited
-        if (ch->isInviteOnly() /* && !ch->isInvited(client) */) {
+        if (ch->isInviteOnly() && !ch->isClientInvited(client.getSessionId())) {
             server.sendReply(client.getFd(), ERR_INVITEONLYCHAN,
                             channelName, "Cannot join channel (+i)");
             continue;

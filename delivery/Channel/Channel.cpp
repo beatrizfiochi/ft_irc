@@ -1,3 +1,4 @@
+#include <cstddef>
 #include "Channel.hpp"
 #include "../log.hpp"
 
@@ -98,16 +99,16 @@ void Channel::setInviteOnly(bool flag) {
     this->inviteOnly = flag;
 }
 
-void Channel::inviteClient(int fd) {
-    invitedClients.insert(fd);
+void Channel::inviteClient(std::size_t sessionId) {
+    invitedClients.insert(sessionId);
 }
 
-void Channel::removeInvite(int fd) {
-    invitedClients.erase(fd);
+void Channel::removeInvite(std::size_t sessionId) {
+    invitedClients.erase(sessionId);
 }
 
-bool Channel::isClientInvited(int fd) {
-    return invitedClients.count(fd) > 0;
+bool Channel::isClientInvited(std::size_t sessionId) {
+    return invitedClients.count(sessionId) > 0;
 }
 
 void Channel::setKey(const std::string &key) {

@@ -49,8 +49,9 @@ int Command::handleKick(Server& server, Client& client) {
     if (param.size() > 2)
         reason = param[2];
     LOG_DBG("Kicking User " + param[1] + " out of channel");
-    server.broadcastMsg(*channel, client, "KICK " + channel->getName(),
-    reason, client.getFd());
+    server.broadcastMsg(*channel, client,
+                        "KICK " + channel->getName() + " " + param[1],
+                        reason);
     server.kickClient(target->getFd(), *channel);
     return 0;
 }

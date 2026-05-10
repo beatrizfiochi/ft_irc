@@ -136,7 +136,7 @@ int Command::handleTopic(Server &server, Client &client) {
     }
     // topic for channel will be changed
     channel->setTopic(param[1]);
-    server.broadcastMsg(*channel, client, "TOPIC " + channel->getName(), channel->getTopic(), client.getFd());
+    server.broadcastMsg(*channel, client, "TOPIC " + channel->getName(), channel->getTopic());
     return 0;
 }
 

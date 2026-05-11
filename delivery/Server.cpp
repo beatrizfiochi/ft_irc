@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sstream>
 #include <string>
 #include <netinet/ip.h>
@@ -146,11 +147,15 @@ int Server::addNewClient(void) {
     int conn_sock;
     sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
-    conn_sock = accept4(this->srv_socket,
-                        (struct sockaddr *) &addr, &addrlen,
-                        SOCK_NONBLOCK | SOCK_CLOEXEC);
+    conn_sock = accept(this->srv_socket,
+                       (struct sockaddr *) &addr, &addrlen);
     if (conn_sock == -1) {
         LOG_ERR("Error on accept");
+        return EXIT_FAILURE;
+    }
+    if (fcntl(conn_sock, F_SETFL, O_NONBLOCK) == -1) {
+        LOG_ERR("fcntl O_NONBLOCK failed on conn_sock. errno = " << errno);
+        close(conn_sock);
         return EXIT_FAILURE;
     }
 

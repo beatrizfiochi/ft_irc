@@ -165,7 +165,7 @@ int Server::addNewClient(void) {
     }
 
     struct epoll_event ev;
-    ev.events = EPOLLIN | EPOLLET;
+    ev.events = EPOLLIN;
     ev.data.fd = conn_sock;
     if (epoll_ctl(this->epollfd, EPOLL_CTL_ADD, conn_sock,
                   &ev) == -1) {
@@ -226,7 +226,7 @@ void Server::disconnectClient(int fd) {
 int Server::setWriteInterest(int fd, bool enabled) {
     struct epoll_event ev;
 
-    ev.events = EPOLLIN | EPOLLET;
+    ev.events = EPOLLIN;
     if (enabled) {
         // Enable EPOLLOUT only while we have pending data.
         // Leaving it armed permanently would wake us up even when the socket is already writable.
@@ -239,12 +239,12 @@ int Server::setWriteInterest(int fd, bool enabled) {
 int Server::flushReplyBuffer(int fd) {
     std::string &buffer = this->client[fd].getWriteBuf();
 
-    while (!buffer.empty()) {
+    if (!buffer.empty()) {
+        // Single send per call. Level-triggered EPOLLOUT will fire again
+        // if the kernel buffer fills mid-write and bytes remain queued.
         ssize_t sent = send(fd, buffer.c_str(), buffer.size(), MSG_NOSIGNAL);
         if (sent > 0) {
             buffer.erase(0, static_cast<size_t>(sent));
-        } else if (sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-            break;
         } else {
             LOG_ERR("send error on fd " << fd << ". errno = " << errno);
             this->disconnectClient(fd);
@@ -336,39 +336,24 @@ int Server::sendReply(int fd, int err, const std::string &cmd, const std::string
 }
 
 int Server::receiveData(int fd) {
-    ssize_t bytes;
     char buff[SERVER_RECEPTION_CHUNCK_SIZE];
 
-    while (true) {
-        // MSG_DONTWAIT not needed if socket is O_NONBLOCK
-        bytes = recv(fd, buff, sizeof(buff), 0);
+    // Single recv per event. Level-triggered EPOLLIN will fire again on the
+    // next epoll_wait() if more data is buffered in the kernel.
+    ssize_t bytes = recv(fd, buff, sizeof(buff), 0);
 
-        if (bytes > 0) {
-            this->client[fd].getReadBuf().append(buff, bytes);
-            LOG_DBG("Received chunk (" << fd << ", size: " << bytes << ")");
-        } else if (bytes == 0) {
-            LOG_WRN("Client <" << fd << "> Disconnected");
-            this->disconnectClient(fd);
-            return 0;
-        } else {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                // Done reading all available data for this event trigger
-                break;
-            } else {
-                // A real error occurred (e.g., ECONNRESET)
-                int ret = errno;
-                if (errno == ECONNRESET) {
-                    LOG_INF("Client " << fd << " disconnected");
-                    ret = 0;
-                } else
-                    LOG_ERR("recv error on fd " << fd << ". errno = " << errno);
-                this->disconnectClient(fd);
-                return ret;
-            }
-        }
-    }
-    if (this->client.find(fd) == this->client.end())
+    if (bytes > 0) {
+        this->client[fd].getReadBuf().append(buff, bytes);
+        LOG_DBG("Received chunk (" << fd << ", size: " << bytes << ")");
+    } else if (bytes == 0) {
+        LOG_WRN("Client <" << fd << "> Disconnected");
+        this->disconnectClient(fd);
         return 0;
+    } else {
+        LOG_ERR("recv error on fd " << fd << ". errno = " << errno);
+        this->disconnectClient(fd);
+        return -1;
+    }
 
     int ret = this->processBufferedMessages(fd);
     if (ret < 0)

@@ -243,5 +243,4 @@ int Command::handlePart(Server &server, Client &client) {
     }
 
     return 0;
-
-    }
+}

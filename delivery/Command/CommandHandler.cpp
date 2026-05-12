@@ -29,7 +29,7 @@ int Command::handlePass(Server &server, Client &client) {
     LOG_DBG("Correct password");
     client.setPassFlag(true);
 
-    return (0);
+    return tryCompleteRegistration(server, client);
 }
 
 int Command::handleNick(Server &server, Client &client) {
@@ -59,7 +59,7 @@ int Command::handleNick(Server &server, Client &client) {
     client.setNick(newNick);
     server.addClientToNickList(client, old);
 
-    return (0);
+    return tryCompleteRegistration(server, client);
 }
 
 // Command: USER
@@ -77,12 +77,20 @@ int Command::handleUser(Server &server, Client &client) {
     // hostname and servername are ignored
     client.setUser(this->param[0]);
     client.setReal(this->param[3]);
-    if (client.getPassFlag() && (client.getNick() != "*")) {
-        client.setRegister(true);
-        return Command::handleMOTD(server, client);
-    }
-    LOG_ERR("Registration failed. Pass flag: " << client.getPassFlag() << ", Nick: " << client.getNick());
-    return -EXIT_FAILURE;
+    return tryCompleteRegistration(server, client);
+}
+
+int Command::tryCompleteRegistration(Server &server, Client &client) {
+    if (client.isRegistered())
+        return 0;
+    if (!client.getPassFlag())
+        return 0;
+    if (client.getNick() == "*")
+        return 0;
+    if (client.getUser().empty())
+        return 0;
+    client.setRegister(true);
+    return handleMOTD(server, client);
 }
 
 int Command::handleMOTD(Server &server, Client &client) {

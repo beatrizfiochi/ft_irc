@@ -73,6 +73,8 @@ private:
     int handleJoin(Server &server, Client &client);
     int handlePing(Server &server, Client &client);
     int handlePart(Server &server, Client &client);
+
+    int tryCompleteRegistration(Server &server, Client &client);
 };
 
 #endif // _COMMAND_HPP_

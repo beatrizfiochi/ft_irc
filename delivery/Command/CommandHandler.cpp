@@ -118,10 +118,6 @@ int Command::handlePrivMsg(Server &server, Client &client) {
         return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS,
                                 this->command, "Not enough parameters");
 
-    if (!client.isRegistered())
-        return server.sendReply(client.getFd(), ERR_NOTREGISTERED,
-                                this->command, "You have not registered");
-
     std::string &target_nick = this->param[0];
     std::string &message     = this->param[1];
 
@@ -170,10 +166,6 @@ int Command::handlePrivMsg(Server &server, Client &client) {
 }
 
 int Command::handlePing(Server &server, Client &client) {
-    // Reject if the Client is not registered
-    if (!client.isRegistered())
-        return server.sendReply(client.getFd(), ERR_NOTREGISTERED, this->command, "You have not registered");
-
     if (this->param.empty())
         return server.sendReply(client.getFd(), ERR_NOORIGIN, "", "No origin specified");
 

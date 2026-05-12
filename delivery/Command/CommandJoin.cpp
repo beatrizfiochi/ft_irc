@@ -136,10 +136,6 @@ int Command::handleJoin(Server &server, Client &client)
         return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS,
                             this->getCmd(), "Not enough parameters");
 
-    if (!client.isRegistered())
-        return server.sendReply(client.getFd(), ERR_NOTREGISTERED,
-                            "", "You have not registered");
-
     std::vector<JoinTarget> targets = parseChannelsAndKeys(this->param);
 
     for (size_t i = 0; i < targets.size(); i++) {
@@ -211,10 +207,6 @@ int Command::handlePart(Server &server, Client &client) {
     if (this->param.size() < 1)
         return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS, this->command,
                             "Not enough parameters");
-
-    if (!client.isRegistered())
-        return server.sendReply(client.getFd(), ERR_NOTREGISTERED,
-                            "", "You have not registered");
 
     std::vector<std::string> channels = split(this->param[0], ',');
 

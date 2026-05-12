@@ -9,30 +9,46 @@ LOG_REGISTER(CmdExecute);
 
 int Command::execute(Server &server, Client &client) {
     typedef int (Command::*CommandHandler)(Server&, Client&);
-
     typedef std::pair<std::string, CommandHandler> HandlerPair;
-    static const HandlerPair pairs[] = {
-        HandlerPair("NICK", &Command::handleNick),
+
+    // Public: usable before registration. PASS/USER reject re-registration
+    // internally; NICK works in both states; QUIT is allowed at any time.
+    static const HandlerPair publicPairs[] = {
         HandlerPair("PASS", &Command::handlePass),
+        HandlerPair("NICK", &Command::handleNick),
         HandlerPair("USER", &Command::handleUser),
-        HandlerPair("PRIVMSG", &Command::handlePrivMsg),
-        HandlerPair("JOIN", &Command::handleJoin),
-        HandlerPair("KICK", &Command::handleKick),
-        HandlerPair("INVITE", &Command::handleInvite),
-        HandlerPair("TOPIC", &Command::handleTopic),
-        HandlerPair("MODE", &Command::handleMode),
-        HandlerPair("PING", &Command::handlePing),
-        HandlerPair("PART", &Command::handlePart),
         HandlerPair("QUIT", &Command::handleQuit),
     };
+    static const std::map<std::string, CommandHandler> publicHandlers(
+        publicPairs, publicPairs + sizeof(publicPairs) / sizeof(publicPairs[0]));
 
-    static const std::map<std::string, CommandHandler>
-                handlers(pairs, pairs + sizeof(pairs) / sizeof(pairs[0]));
+    // Private: dispatcher enforces ERR_NOTREGISTERED before reaching them.
+    static const HandlerPair privatePairs[] = {
+        HandlerPair("JOIN",    &Command::handleJoin),
+        HandlerPair("PART",    &Command::handlePart),
+        HandlerPair("PRIVMSG", &Command::handlePrivMsg),
+        HandlerPair("PING",    &Command::handlePing),
+        HandlerPair("KICK",    &Command::handleKick),
+        HandlerPair("INVITE",  &Command::handleInvite),
+        HandlerPair("TOPIC",   &Command::handleTopic),
+        HandlerPair("MODE",    &Command::handleMode),
+    };
+    static const std::map<std::string, CommandHandler> privateHandlers(
+        privatePairs, privatePairs + sizeof(privatePairs) / sizeof(privatePairs[0]));
 
-    std::map<std::string, CommandHandler>::const_iterator it = handlers.find(this->command);
+    std::map<std::string, CommandHandler>::const_iterator it;
 
-    if (it != handlers.end())
+    it = publicHandlers.find(this->command);
+    if (it != publicHandlers.end())
         return (this->*(it->second))(server, client);
+
+    it = privateHandlers.find(this->command);
+    if (it != privateHandlers.end()) {
+        if (!client.isRegistered())
+            return server.sendReply(client.getFd(), ERR_NOTREGISTERED,
+                                    "", "You have not registered");
+        return (this->*(it->second))(server, client);
+    }
 
     return this->handleUnknownCommand(server, client);
 }

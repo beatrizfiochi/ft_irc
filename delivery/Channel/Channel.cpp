@@ -123,7 +123,7 @@ bool Channel::checkKey(const std::string &key) {
 
 bool Channel::hasKey(void) const {
     return (this->key != "");
-};
+}
 
 bool Channel::isFull(void) const {
     if (this->userLimit != -1)

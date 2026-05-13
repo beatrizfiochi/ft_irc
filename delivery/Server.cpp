@@ -78,14 +78,11 @@ int Server::openServerSocket(void) {
 
     // From man 7 ip
     // INADDR_ANY (0.0.0.0) means any address for binding
-    struct sockaddr_in add = {
-        .sin_family = AF_INET,
-        .sin_port = htons(this->port),
-        .sin_addr = {
-            .s_addr = INADDR_ANY,
-        },
-        .sin_zero = { 0 },
-    };
+    struct sockaddr_in add;
+    std::memset(&add, 0, sizeof(add));
+    add.sin_family = AF_INET;
+    add.sin_port = htons(this->port);
+    add.sin_addr.s_addr = INADDR_ANY;
     if (bind(this->srv_socket, (struct sockaddr *)&add, sizeof(add)) == -1) {
         LOG_ERR("faild to bind socket");
         return -1;

@@ -173,10 +173,6 @@ int Command::handleMode(Server &server, Client &client) {
         LOG_DBG("Not enough parameters");
         return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS, this->command, "Not enough parameters");
     }
-    if (param[0].empty() || param[0][0] != '#') {
-        LOG_DBG("No such channel: " + param[0]);
-        return server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL, param[0], "No such channel");
-    }
 
     Channel *channel = server.getChannel(param[0]);
     if (channel == NULL) {

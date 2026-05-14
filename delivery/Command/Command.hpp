@@ -42,6 +42,16 @@
 #define RPL_NAMREPLY        353 // "<channel> :[[@|+]<nick> [[@|+]<nick> [...]]]"
 #define RPL_ENDOFNAMES      366 // "<channel> :End of /NAMES list"
 
+struct temporaryMode {
+    char sign;
+    char mode;
+    std::string arg;
+    long limitValue;
+
+    temporaryMode(char s, char m, const std::string &a)
+        : sign(s), mode(m), arg(a), limitValue(0) {}
+};
+
 class Command {
 public:
     static Command *parsing(const std::string &raw);

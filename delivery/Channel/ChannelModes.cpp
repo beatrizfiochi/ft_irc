@@ -1,4 +1,6 @@
 #include "Channel.hpp"
+#include "../Client/Client.hpp"
+#include <sstream>
 
 void Channel::enableInviteOnly() {
     this->setInviteOnly(true);
@@ -40,6 +42,22 @@ void Channel::removeLimit() {
     this->userLimit = -1;
 }
 
-const std::string Channel::getModeList(void) const {
-    return this->modeList;
+std::string Channel::getModeList(void) const {
+    std::string modes;
+    std::string args;
+    if (inviteOnly)
+        modes += 'i';
+    if (topicRestricted)
+        modes += 't';
+    if (!key.empty()) {
+        modes += 'k';
+        args += " " + key;
+    }
+    if (userLimit != -1) {
+        std::stringstream ss;
+        ss << userLimit;
+        modes += 'l';
+        args += " " + ss.str();
+    }
+    return modes + args;
 }

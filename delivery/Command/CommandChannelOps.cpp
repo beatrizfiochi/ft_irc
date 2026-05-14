@@ -168,20 +168,14 @@ int Command::handleTopic(Server &server, Client &client) {
 //  When parsing MODE messages, it is recommended that the entire message
 //  be parsed first and then the changes which resulted then passed on.
 
-struct temporaryMode {
-    char sign;
-    char mode;
-    std::string arg;
-    long limitValue;
-
-    temporaryMode(char s, char m, const std::string &a)
-        : sign(s), mode(m), arg(a), limitValue(0) {}
-};
-
 int Command::handleMode(Server &server, Client &client) {
     if (param.size() < 1) {
         LOG_DBG("Not enough parameters");
         return server.sendReply(client.getFd(), ERR_NEEDMOREPARAMS, this->command, "Not enough parameters");
+    }
+    if (param[0].empty() || param[0][0] != '#') {
+        LOG_DBG("No such channel: " + param[0]);
+        return server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL, param[0], "No such channel");
     }
 
     Channel *channel = server.getChannel(param[0]);

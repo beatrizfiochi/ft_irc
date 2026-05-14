@@ -8,8 +8,7 @@ Channel::Channel(void)
         : name(""), topic(""),
         inviteOnly(false),
         topicRestricted(false),
-        key(""), userLimit(-1),
-        modeList("") {
+        key(""), userLimit(-1){
     LOG_INF("Channel empty created");
 }
 
@@ -17,8 +16,7 @@ Channel::Channel(const std::string &channelName)
         : name(channelName),
         topic(""), inviteOnly(false),
         topicRestricted(false),
-        key(""), userLimit(-1),
-        modeList("") {
+        key(""), userLimit(-1) {
     LOG_INF("Channel " << channelName << " created");
 }
 
@@ -28,7 +26,6 @@ Channel::Channel(const Channel& other)
         inviteOnly(other.inviteOnly),
         topicRestricted(other.topicRestricted),
         key(other.key), userLimit(other.userLimit),
-        modeList(other.modeList),
         invitedClients(other.invitedClients) {}
 
 Channel& Channel::operator=(const Channel& other) {
@@ -41,7 +38,6 @@ Channel& Channel::operator=(const Channel& other) {
         this->topicRestricted = other.topicRestricted;
         this->key = other.key;
         this->userLimit = other.userLimit;
-        this->modeList = other.modeList;
         this->invitedClients = other.invitedClients;
     }
     return *this;

@@ -21,8 +21,6 @@ class Channel {
         std::string key;
         // Maxmimum number of members in the channel. -1 if disabled
         int userLimit;
-        // modes
-        std::string modeList;
         // invite
         std::set<std::size_t> invitedClients;
 
@@ -70,7 +68,7 @@ class Channel {
         void removePass();
         void setLimit(long value);
         void removeLimit();
-        const std::string getModeList(void) const;
+        std::string getModeList(void) const;
     };
 
 #endif // CHANNEL_HPP

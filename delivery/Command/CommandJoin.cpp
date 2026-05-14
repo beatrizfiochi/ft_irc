@@ -143,8 +143,9 @@ int Command::handleJoin(Server &server, Client &client)
         std::string key         = targets[i].key;
 
         if (!isValidChannelName(channelName)) {
-            server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL,
-                            channelName, "No such channel");
+            if (server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL,
+                            channelName, "No such channel") < 0)
+                return -1;
             continue;
         }
 
@@ -171,20 +172,23 @@ int Command::handleJoin(Server &server, Client &client)
         }
 
         if (ch->isInviteOnly() && !ch->isClientInvited(client.getSessionId())) {
-            server.sendReply(client.getFd(), ERR_INVITEONLYCHAN,
-                            channelName, "Cannot join channel (+i)");
+            if (server.sendReply(client.getFd(), ERR_INVITEONLYCHAN,
+                            channelName, "Cannot join channel (+i)") < 0)
+                return -1;
             continue;
         }
 
         if (ch->hasKey() && !ch->checkKey(key)) {
-            server.sendReply(client.getFd(), ERR_BADCHANNELKEY,
-                            channelName, "Cannot join channel (+k)");
+            if (server.sendReply(client.getFd(), ERR_BADCHANNELKEY,
+                            channelName, "Cannot join channel (+k)") < 0)
+                return -1;
             continue;
         }
 
         if (ch->isFull()) {
-            server.sendReply(client.getFd(), ERR_CHANNELISFULL,
-                            channelName, "Cannot join channel (+l)");
+            if (server.sendReply(client.getFd(), ERR_CHANNELISFULL,
+                            channelName, "Cannot join channel (+l)") < 0)
+                return -1;
             continue;
         }
 
@@ -222,14 +226,16 @@ int Command::handlePart(Server &server, Client &client) {
 
         Channel *ch = server.getChannel(channelName);
         if (ch == NULL) {
-            server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL,
-                            channelName, "No such channel");
+            if (server.sendReply(client.getFd(), ERR_NOSUCHCHANNEL,
+                            channelName, "No such channel") < 0)
+                return -1;
             continue;
         }
 
         if (!ch->isMember(client.getFd())) {
-            server.sendReply(client.getFd(), ERR_NOTONCHANNEL,
-                            channelName, "You're not on that channel");
+            if (server.sendReply(client.getFd(), ERR_NOTONCHANNEL,
+                            channelName, "You're not on that channel") < 0)
+                return -1;
             continue;
         }
 

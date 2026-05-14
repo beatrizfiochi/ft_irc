@@ -48,11 +48,14 @@ int Command::handleKick(Server& server, Client& client) {
     if (param.size() > 2)
         reason = param[2];
     LOG_DBG("Kicking User " + param[1] + " out of channel");
-    server.broadcastMsg(*channel, client,
-                        "KICK " + channel->getName() + " " + param[1],
-                        reason);
-    server.kickClient(target->getFd(), *channel);
-    return 0;
+    // Capture target fd before broadcasting: the broadcast can disconnect
+    // target (a channel member) on a write failure, leaving `target` dangling.
+    int targetFd = target->getFd();
+    int ret = server.broadcastMsg(*channel, client,
+                                  "KICK " + channel->getName() + " " + param[1],
+                                  reason);
+    server.kickClient(targetFd, *channel);
+    return ret;
 }
 
 //      Command: INVITE
@@ -98,9 +101,9 @@ int Command::handleInvite(Server& server, Client& client) {
         channel->inviteClient(target->getSessionId());
     }
     LOG_DBG("Inviting user " + invited_nickname + " to channel " + ch_name);
-    server.sendReply(client.getFd(), RPL_INVITING, invited_nickname + " " + ch_name, "");
-    server.sendGenericMsg(client, *target, "INVITE " + target->getNick() + " " + ch_name, "");
-    return 0;
+    if (server.sendReply(client.getFd(), RPL_INVITING, invited_nickname + " " + ch_name, "") < 0)
+        return -1;
+    return server.sendGenericMsg(client, *target, "INVITE " + target->getNick() + " " + ch_name, "");
 }
 
 //    Command: TOPIC
@@ -139,13 +142,11 @@ int Command::handleTopic(Server &server, Client &client) {
             LOG_DBG("No topic is set");
             return server.sendReply(client.getFd(), RPL_NOTOPIC, param[0], "No topic is set");
         }
-        server.sendReply(client.getFd(), RPL_TOPIC, channel->getName(), channel->getTopic());
-        return 0;
+        return server.sendReply(client.getFd(), RPL_TOPIC, channel->getName(), channel->getTopic());
     }
     // topic for channel will be changed
     channel->setTopic(param[1]);
-    server.broadcastMsg(*channel, client, "TOPIC " + channel->getName(), channel->getTopic());
-    return 0;
+    return server.broadcastMsg(*channel, client, "TOPIC " + channel->getName(), channel->getTopic());
 }
 
 //  Parameters: <channel> {[+|-]|o|p|s|i|t|n|b|v} [<limit>] [<user>]
@@ -314,6 +315,5 @@ int Command::handleMode(Server &server, Client &client) {
     std::string modeParameters = param[1];
     for (size_t i = 2; i < param.size(); i++)
         modeParameters += " " + param[i];
-    server.broadcastMsg(*channel, client, "MODE " + channel->getName(), modeParameters);
-    return 0;
+    return server.broadcastMsg(*channel, client, "MODE " + channel->getName(), modeParameters);
 }

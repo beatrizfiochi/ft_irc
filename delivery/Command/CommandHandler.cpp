@@ -142,24 +142,28 @@ int Command::handlePrivMsg(Server &server, Client &client) {
         if (isChannelName(targets[i])) {
             Channel *ch = server.getChannel(targets[i]);
             if (ch == NULL) {
-                server.sendReply(client.getFd(), ERR_NOSUCHNICK,
-                                        targets[i], "No such nick/channel");
+                if (server.sendReply(client.getFd(), ERR_NOSUCHNICK,
+                                        targets[i], "No such nick/channel") < 0)
+                    return -1;
                 continue;
             }
             if (!ch->isMember(client.getFd())) {
-                server.sendReply(client.getFd(), ERR_CANNOTSENDTOCHAN,
-                                        targets[i], "Cannot send to channel");
+                if (server.sendReply(client.getFd(), ERR_CANNOTSENDTOCHAN,
+                                        targets[i], "Cannot send to channel") < 0)
+                    return -1;
                 continue;
             }
             LOG_DBG("Msg to channel : " + targets[i] + ": " + message);
-            server.broadcastMsg(*ch, client, "PRIVMSG " + ch->getName(),
-                                message, client.getFd());
+            if (server.broadcastMsg(*ch, client, "PRIVMSG " + ch->getName(),
+                                message, client.getFd()) < 0)
+                return -1;
         } else {
             Client *target_client = server.getClient(targets[i]);
             if (target_client == NULL){
                 LOG_DBG("Target not found: " + targets[i]);
-                server.sendReply(client.getFd(), ERR_NOSUCHNICK,
-                                        targets[i], "No such nick/channel");
+                if (server.sendReply(client.getFd(), ERR_NOSUCHNICK,
+                                        targets[i], "No such nick/channel") < 0)
+                    return -1;
                 continue;
             }
             LOG_DBG("Msg to : " + targets[i] + ": " + message);

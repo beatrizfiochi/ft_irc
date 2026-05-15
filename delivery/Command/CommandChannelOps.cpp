@@ -1,7 +1,8 @@
+#include <cstdlib>
+#include <climits>
 #include "Command.hpp"
 #include "../Channel/Channel.hpp"
 #include "../log.hpp"
-#include <cstdlib>
 
 LOG_REGISTER(Command_ChannelOps);
 

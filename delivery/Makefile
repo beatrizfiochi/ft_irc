@@ -13,6 +13,7 @@ SRCS = $(SRCS_DIR)/main.cpp \
 	$(SRCS_DIR)/Command/CommandJoin.cpp \
 	$(SRCS_DIR)/utils/utils.cpp \
 	$(SRCS_DIR)/utils/IrcParse.cpp \
+	$(SRCS_DIR)/utils/Signal.cpp \
 	$(SRCS_DIR)/irc.cpp \
 	$(SRCS_DIR)/Client/Client.cpp \
 	$(SRCS_DIR)/Channel/Channel.cpp \

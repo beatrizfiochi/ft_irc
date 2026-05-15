@@ -122,8 +122,18 @@ TokenizeResult tokenizeNextMessage(std::string &buf, IrcMessage &out) {
     out = IrcMessage();
 
     std::string::size_type end = buf.find("\r\n");
-    if (end == std::string::npos)
+    if (end == std::string::npos) {
+        // No frame yet. Guard against unbounded buffer growth: if we
+        // already have more bytes queued than the RFC line cap allows,
+        // the in-progress frame is doomed to fail the size check anyway.
+        // Drop the bogus bytes now to avoid a memory-exhaustion DoS from
+        // a peer that streams data without ever sending CRLF.
+        if (buf.size() > IRC_MAX_LINE_SIZE) {
+            buf.clear();
+            return TOKENIZE_TOO_LONG;
+        }
         return TOKENIZE_NO_FRAME;
+    }
 
     std::string line = buf.substr(0, end);
     buf.erase(0, end + 2);

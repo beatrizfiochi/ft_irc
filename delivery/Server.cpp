@@ -21,8 +21,10 @@
 // Maximum number of events
 #define MAX_EVENTS 10
 
-// Buffer size for each socket read. RFC messages are limited to 512 bytes,
-// the framing/size cap itself is enforced inside utils/IrcParse.
+// Per-recv() chunk size. This is just how much we ask the kernel for in one
+// call; it does NOT cap accumulated unframed input. That cap lives in
+// utils/IrcParse::tokenizeNextMessage (drops the buffer if it grows past
+// the RFC line size before a CRLF arrives).
 #define SERVER_RECEPTION_CHUNCK_SIZE 1024
 
 // From the RFC:

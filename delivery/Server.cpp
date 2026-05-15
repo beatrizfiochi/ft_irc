@@ -22,12 +22,8 @@
 #define MAX_EVENTS 10
 
 // Buffer size for each socket read. RFC messages are limited to 512 bytes,
+// the framing/size cap itself is enforced inside utils/IrcParse.
 #define SERVER_RECEPTION_CHUNCK_SIZE 1024
-
-// From the RFC:
-// > these messages shall not exceed 512 characters in length, counting all
-// > characters including the trailing CR-LF
-#define IRC_MAX_MESSAGE_SIZE         512
 
 // From the RFC:
 // > <prefix> ::= <servername> | <nick> | <extended prefix>
@@ -269,19 +265,22 @@ int Server::processBufferedMessages(int fd) {
     std::string &buffer = this->client[fd].getReadBuf();
 
     while (true) {
-        std::string::size_type end = buffer.find("\r\n");
-        if (end == std::string::npos)
+        IrcMessage msg;
+        TokenizeResult r = tokenizeNextMessage(buffer, msg);
+        if (r == TOKENIZE_NO_FRAME)
             break;
-
-        std::string message = buffer.substr(0, end + 2);
-        buffer.erase(0, end + 2);
-
-        if (message.length() > IRC_MAX_MESSAGE_SIZE - 2) {
+        if (r == TOKENIZE_TOO_LONG) {
             LOG_ERR("Message too long on fd " << fd << ", dropping it");
             continue;
         }
+        if (r == TOKENIZE_MALFORMED) {
+            LOG_ERR("Malformed message on fd " << fd << ", dropping it");
+            continue;
+        }
+        if (r == TOKENIZE_EMPTY)
+            continue;
 
-        Command *cmd = Command::parsing(message);
+        Command *cmd = Command::fromMessage(msg);
         if (cmd != NULL) {
             ret = cmd->execute(*this, this->client[fd]);
             delete cmd;

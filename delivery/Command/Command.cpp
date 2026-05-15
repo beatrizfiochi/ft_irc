@@ -1,9 +1,9 @@
-#include <algorithm>
 #include <cctype>
 #include <string>
 #include <vector>
 #include "Command.hpp"
 #include "../log.hpp"
+#include "../utils/IrcParse.hpp"
 
 LOG_REGISTER(Command);
 
@@ -34,99 +34,50 @@ Command::Command(const std::string &command, const std::vector<std::string> &par
 //  continuation message lines.  See section 7 for more details about
 //  current implementations.
 
-// From RFC:
-// <message>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
-Command *Command::parsing(const std::string &raw) {
-    // "The prefix is used by servers to indicate the true origin of the message"
-    std::string prefix;
-    std::string command;
-    size_t pos = 0;
-    std::vector<std::string> param;
-
-    // Check the end
-    if ((raw.length() <= 2) || (std::string(raw.end() - 2, raw.end()) != "\r\n")){
-        LOG_ERR("Message not valid. No crlf");
+// Server-side validation on top of an already-tokenized message. Framing
+// (CRLF + size cap) and grammar tokenization happen earlier in
+// utils/IrcParse::tokenizeNextMessage. Here we only enforce server-specific
+// rules: reject client-supplied prefixes (no server-to-server traffic),
+// validate command grammar, and validate per-param char rules.
+Command *Command::fromMessage(const IrcMessage &msg) {
+    if (!msg.getPrefix().empty()) {
+        LOG_ERR("Client-supplied prefix not supported");
         return NULL;
     }
 
-    if (raw[0] == ':') {
-        // Process the prefix
-        // TODO: Since this project does not have server-to-server communication. We probably don't need to implement
-        // prefix. Check this.
-        (void)prefix;
-        return NULL;
-    } else if (raw[0] == ' ') {
-        LOG_ERR("Command (" + raw + ") not valid. Start with spaces");
+    if (!Command::isValidCommand(msg.getCommand())) {
+        LOG_ERR("Command (" + msg.getCommand() + ") not valid");
         return NULL;
     }
 
-    command = Command::getNextToken(raw, pos);
-    if (!Command::isValidCommand(command)) {
-        LOG_ERR("Command (" + command + ") not valid");
-        return NULL;
-    }
-    do {
-        std::string token = Command::getNextToken(raw, pos);
-        if (token.empty())
-            break;
-
-        if (!Command::isValidParam(token)){
-            LOG_ERR("Parameter (" + token + ") not valid");
-            return NULL;
+    // Per-param validation: middle params disallow space/nul/cr/lf and must be
+    // non-empty; trailing only disallows nul/cr/lf and may be empty.
+    const std::vector<std::string> &params = msg.getParams();
+    for (size_t i = 0; i < params.size(); ++i) {
+        bool isTrailing = (msg.hasTrailing() && i + 1 == params.size());
+        const std::string &p = params[i];
+        if (!isTrailing) {
+            if (p.empty()) {
+                LOG_ERR("Empty middle parameter");
+                return NULL;
+            }
+            for (std::string::const_iterator it = p.begin(); it != p.end(); ++it) {
+                if (*it == ' ' || *it == '\r' || *it == '\n' || *it == '\0') {
+                    LOG_ERR("Middle parameter (" + p + ") not valid");
+                    return NULL;
+                }
+            }
+        } else {
+            for (std::string::const_iterator it = p.begin(); it != p.end(); ++it) {
+                if (*it == '\r' || *it == '\n' || *it == '\0') {
+                    LOG_ERR("Trailing parameter (" + p + ") not valid");
+                    return NULL;
+                }
+            }
         }
-        // Remove the :
-        if (token[0] == ':') {
-            token.erase(0, 1);
-        }
-        param.push_back(token);
-    } while (true);
-
-    return new Command(command, param);
-}
-
-// From the RFC:
-// <SPACE>    ::= ' ' { ' ' }
-size_t Command::skipSpaces(const std::string &str, size_t pos) {
-    for (std::string::const_iterator i = str.begin() + pos; i != str.end(); i++){
-        if (*i != ' ')
-            return i - str.begin();
-    }
-    return str.end() - str.begin();
-}
-
-// From the RFC:
-// <params>   ::= <SPACE> [ ':' <trailing> | <middle> <params> ]
-//
-// <middle>   ::= <Any *non-empty* sequence of octets not including SPACE
-//                or NUL or CR or LF, the first of which may not be ':'>
-// <trailing> ::= <Any, possibly *empty*, sequence of octets not including
-//                  NUL or CR or LF>
-std::string Command::getNextToken(const std::string &str, size_t &pos) {
-    if (pos >= str.length()) {
-        pos = str.length();
-        return "";
     }
 
-    size_t start = Command::skipSpaces(str, pos);
-    if (start >= str.length()) {
-        pos = str.length();
-        return "";
-    }
-
-    if (str[start] == ':') {
-        pos = str.length();
-    } else {
-        pos = str.find(' ', start);
-        if (pos == std::string::npos)
-            pos = str.length();
-    }
-    std::string result = std::string(str, start, pos - start);
-
-    if ((result.length() > 2) && \
-    (*(result.end() - 2) == '\r') && (*(result.end() - 1) == '\n')) {
-        result.erase(result.end() - 2, result.end());
-    }
-    return result;
+    return new Command(msg.getCommand(), params);
 }
 
 // From the RFC:
@@ -137,39 +88,10 @@ bool Command::isValidCommand(const std::string &cmd) {
         std::isdigit(static_cast<unsigned char>(cmd[1])) &&
         std::isdigit(static_cast<unsigned char>(cmd[2])))
         return true;
+    if (cmd.empty())
+        return false;
     for (std::string::const_iterator it = cmd.begin(); it != cmd.end(); it++) {
         if (!std::isalpha(static_cast<unsigned char>(*it)))
-            return false;
-    }
-    return true;
-}
-
-// From the RFC:
-// <params>   ::= <SPACE> [ ':' <trailing> | <middle> <params> ]
-//
-// <middle>   ::= <Any *non-empty* sequence of octets not including SPACE
-//                or NUL or CR or LF, the first of which may not be ':'>
-// <trailing> ::= <Any, possibly *empty*, sequence of octets not including
-//                  NUL or CR or LF>
-bool Command::isValidParam(const std::string &param) {
-    // trailing
-    if (param.length() == 0)
-        return false;
-    if (param[0] == ':') {
-        if (param.length() >= 1) {
-            for (std::string::const_iterator it = param.begin() + 1; it != param.end(); it++) {
-                if ((*it == '\r') || (*it == '\n') || (*it == '\0'))
-                    return false;
-            }
-        }
-        return true;
-    }
-
-    // middle
-    if (param.length() == 0)
-        return false;
-    for (std::string::const_iterator it = param.begin(); it != param.end(); it++) {
-        if ((*it == ' ') || (*it == '\r') || (*it == '\n') || (*it == '\0'))
             return false;
     }
     return true;

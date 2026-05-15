@@ -6,6 +6,7 @@
 #include <climits>
 #include "../Client/Client.hpp"
 #include "../Server.hpp"
+#include "../utils/IrcParse.hpp"
 
 // ERROR MESSAGES
 #define ERR_NOSUCHNICK          401 // "<nickname> :No such nick/channel"
@@ -54,7 +55,7 @@ struct temporaryMode {
 
 class Command {
 public:
-    static Command *parsing(const std::string &raw);
+    static Command *fromMessage(const IrcMessage &msg);
     const std::string& getCmd(void) const;
     const std::vector<std::string>& getParams(void) const;
     int execute(Server &server, Client &client);
@@ -63,10 +64,7 @@ private:
     std::vector<std::string> param;
 
     Command(const std::string &command, const std::vector<std::string> &param);
-    static size_t skipSpaces(const std::string &str, size_t pos);
-    static std::string getNextToken(const std::string &str, size_t &pos);
     static bool isValidCommand(const std::string &cmd);
-    static bool isValidParam(const std::string &param);
     bool isValidNick(const std::string &nickname);
 
     int handleUnknownCommand(Server &server, Client &client);

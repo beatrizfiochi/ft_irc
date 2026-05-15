@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cctype>
 #include "log.hpp"
 #include "Server.hpp"
 #include "utils/Signal.hpp"

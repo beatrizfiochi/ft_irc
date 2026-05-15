@@ -68,6 +68,11 @@ bool tokenizeIrcLine(const std::string &line, IrcMessage &out) {
     if (line.empty())
         return false;
 
+    // RFC 1459 §2.3: a message starts with ':' (prefix) or directly with the
+    // command. Leading whitespace is not valid.
+    if (line[0] == ' ')
+        return false;
+
     std::string::size_type pos = 0;
 
     // Optional prefix

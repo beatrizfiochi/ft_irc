@@ -1,10 +1,10 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <cctype>
 #include "log.hpp"
 #include "Server.hpp"
 #include "utils/Signal.hpp"
+#include "utils/utils.hpp"
 
 LOG_REGISTER(main);
 
@@ -14,23 +14,12 @@ static void usage(char *argv[]) {
     std::cout << "\t<password>: The connection password\n";
 }
 
-static bool is_number(const std::string& s) {
-    if (s.empty()) return false;
-
-    for (std::string::const_iterator it = s.begin(); it != s.end(); ++it) {
-        if (!std::isdigit(*it)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 static bool parseArg(int argc, char *argv[], unsigned int &port, std::string &password) {
     do {
         if (argc != 3)
             break;
         std::string port_s(argv[1]);
-        if (!is_number(port_s))
+        if (!isNumber(port_s))
             break;
         std::istringstream iss(port_s);
         iss >> port; // num now holds the integer value 42

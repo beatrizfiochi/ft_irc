@@ -1,5 +1,6 @@
 
 NAME = ircserv
+BOT_NAME = ircbot
 
 SRCS_DIR = .
 
@@ -19,9 +20,17 @@ SRCS = $(SRCS_DIR)/main.cpp \
 	$(SRCS_DIR)/Channel/Channel.cpp \
 	$(SRCS_DIR)/Channel/ChannelModes.cpp \
 
+BOT_SRCS = $(SRCS_DIR)/bot/main.cpp \
+	$(SRCS_DIR)/utils/utils.cpp \
+	$(SRCS_DIR)/bot/Bot.cpp \
+	$(SRCS_DIR)/log.cpp \
+	$(SRCS_DIR)/utils/IrcParse.cpp \
+	$(SRCS_DIR)/utils/Signal.cpp \
+
 OBJS_DIR = objs
 OBJS = $(patsubst %.cpp,$(OBJS_DIR)/%.o,$(SRCS))
-DEPENDS = $(patsubst %.cpp,$(OBJS_DIR)/%.d,$(SRCS))
+BOT_OBJS = $(patsubst %.cpp,$(OBJS_DIR)/%.o,$(BOT_SRCS))
+DEPENDS = $(patsubst %.cpp,$(OBJS_DIR)/%.d,$(SRCS) $(BOT_SRCS))
 
 CXFLAGS += -Wall -Werror -Wextra -std=c++98
 
@@ -32,15 +41,20 @@ ifneq (,$(filter test gdb valgrind,$(firstword $(MAKECMDGOALS))))
   $(eval $(RUN_ARGS):;@:)
 endif
 
-.PHONY: all clean fclean re debug valgrind test
+.PHONY: all bonus clean fclean re debug valgrind test
 
 all: $(NAME)
+
+bonus: $(NAME) $(BOT_NAME)
 
 debug: CXFLAGS += -DENABLE_LOG=1 -DENABLE_LOG_LVL=4 -ggdb
 debug: all
 
 $(NAME): $(OBJS)
 	$(CXX) $(CXFLAGS) $(OBJS) -I. -o $(NAME)
+
+$(BOT_NAME): $(BOT_OBJS)
+	$(CXX) $(CXFLAGS) $(BOT_OBJS) -I. -o $(BOT_NAME)
 
 -include $(DEPENDS)
 
@@ -49,10 +63,10 @@ $(OBJS_DIR)/%.o: %.cpp Makefile
 	$(CXX) $(CXFLAGS) -MMD -MP -c $< -o $@
 
 clean:
-	rm -rf $(OBJS) $(DEPENDS) $(OBJS_DIR)
+	rm -rf $(OBJS) $(BOT_OBJS) $(DEPENDS) $(OBJS_DIR)
 
 fclean: clean
-	rm -rf $(NAME)
+	rm -rf $(NAME) $(BOT_NAME)
 
 re: fclean all
 

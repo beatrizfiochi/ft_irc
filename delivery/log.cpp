@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   log.cpp                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: djunho <marvin@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/05/17 12:50:15 by djunho            #+#    #+#             */
+/*   Updated: 2026/05/17 12:50:15 by djunho           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <string>
 #include "log.hpp"
 #ifdef ENABLE_TIMESTAMP
@@ -35,4 +47,3 @@ std::string log_header(std::string module, std::string lvl) {
     hdr += "[" + lvl + "] " + module + ": ";
     return hdr;
 }
-

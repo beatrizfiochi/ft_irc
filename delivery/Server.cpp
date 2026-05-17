@@ -63,7 +63,7 @@ int Server::openServerSocket(void) {
     this->srv_socket = socket(AF_INET, (SOCK_STREAM | SOCK_NONBLOCK), 0);
     if(this->srv_socket == -1) { //-> check if the socket is created
         LOG_ERR("Fail to create the socket");
-        return -1;
+        return EXIT_FAILURE;
     }
     // Check SO_REUSEADDR on man 7 socket
     int val = 1;
@@ -71,7 +71,7 @@ int Server::openServerSocket(void) {
                             &val, sizeof(val));
     if(ret == -1) {
         LOG_ERR("Fail to set socket option");
-        return -1;
+        return EXIT_FAILURE;
     }
 
     // From man 7 ip
@@ -83,12 +83,12 @@ int Server::openServerSocket(void) {
     add.sin_addr.s_addr = INADDR_ANY;
     if (bind(this->srv_socket, (struct sockaddr *)&add, sizeof(add)) == -1) {
         LOG_ERR("faild to bind socket");
-        return -1;
+        return EXIT_FAILURE;
     }
     // listen for incoming connections and making the socket a passive socket
     if (listen(this->srv_socket, SOMAXCONN) == -1) {
         LOG_ERR("faild to bind socket");
-        return -1;
+        return EXIT_FAILURE;
     }
     return 0;
 }
@@ -110,13 +110,15 @@ int Server::listenEvents(void) {
         return EXIT_FAILURE;
     }
 
+    int ret = 0;
     while (!*(this->shutdown_flag)) {
         nfds = epoll_wait(this->epollfd, events, MAX_EVENTS, -1);
         if (nfds == -1) {
             if (errno == EINTR)
                 continue;
             LOG_ERR("epoll_wait");
-            exit(EXIT_FAILURE);
+            ret = EXIT_FAILURE;
+            break;
         }
         for (int n = 0; n < nfds; ++n) {
             if (events[n].data.fd == this->srv_socket) {
@@ -133,9 +135,13 @@ int Server::listenEvents(void) {
             }
         }
     }
-    LOG_INF("Shutdown signal received, cleaning up...");
+    if (ret == 0)
+        LOG_INF("Shutdown signal received, cleaning up...");
+    else
+        LOG_ERR("Exiting due to epoll_wait error, cleaning up...");
+
     this->shutdown(); // Notify Clients and shutdown
-    return 0;
+    return ret;
 }
 
 int Server::addNewClient(void) {

@@ -42,8 +42,7 @@ int main(int argc, char *argv[]) {
 
     LOG_DBG("port: " << port << "; password: " << passw);
     Server srv(port, passw);
-    srv.run(&g_shutdownRequested);
-
+    int ret = srv.run(&g_shutdownRequested);
     LOG_INF("IRC server stopped");
-    return 0;
+    return ret;
 }

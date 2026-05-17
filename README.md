@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by cmoura-p, bfiochi-, djunho.*
+*This project has been created as part of the 42 curriculum by [cmoura-p](https://github.com/cmoura-p), [bfiochi-](https://github.com/beatrizfiochi), [djunho](https://github.com/djunho/).*
 
 # ft_irc
 
